@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
 import { parseISTTimestamp } from "@/utils/timeUtils";
@@ -44,6 +44,10 @@ const getSeverityStyles = (
   }
 };
 
+// Fixed row height for consistent layout without dynamic calc()
+const ROW_HEIGHT = 24;
+const GRID_ASPECT_RATIO = 12750 / 10920;
+
 export function FullTrafficGrid({
   data,
   rows = 21,
@@ -55,11 +59,21 @@ export function FullTrafficGrid({
     y: number;
   } | null>(null);
 
-  // Create a map for quick lookup
-  const dataMap = new Map<string, TrafficData>();
-  data.forEach(item => {
-    dataMap.set(`${item.x}-${item.y}`, item);
-  });
+  // Memoize the data map to prevent recreation on every render
+  const dataMap = useMemo(() => {
+    const map = new Map<string, TrafficData>();
+    data.forEach(item => {
+      map.set(`${item.x}-${item.y}`, item);
+    });
+    return map;
+  }, [data]);
+
+  // Memoize grid template styles to avoid recalculation
+  const gridStyles = useMemo(() => ({
+    headerGrid: { gridTemplateColumns: `repeat(${cols}, minmax(24px, 1fr))` },
+    mainGrid: { gridTemplateColumns: `repeat(${cols}, 1fr)` },
+    aspectRatio: { aspectRatio: GRID_ASPECT_RATIO },
+  }), [cols]);
 
   const handleCellClick = (x: number, y: number) => {
     const cell = dataMap.get(`${x}-${y}`);
@@ -84,7 +98,7 @@ export function FullTrafficGrid({
                     row === rows - 1 &&
                       "border-l border-b border-r rounded-bl-lg"
                   )}
-                  style={{ height: `calc((100% - ${rows - 1}px) / ${rows})` }}
+                  style={{ height: ROW_HEIGHT }}
                 >
                   {row}
                 </div>
@@ -96,9 +110,7 @@ export function FullTrafficGrid({
               <div className="border border-border overflow-hidden">
                 <div
                   className="grid gap-1 bg-card"
-                  style={{
-                    gridTemplateColumns: `repeat(${cols}, minmax(24px, 1fr))`,
-                  }}
+                  style={gridStyles.headerGrid}
                 >
                   {Array.from({ length: cols }, (_, col) => (
                     <div
@@ -116,16 +128,12 @@ export function FullTrafficGrid({
                 className="relative bg-cover bg-center bg-no-repeat rounded-br-lg overflow-hidden border border-border border-t-0"
                 style={{
                   backgroundImage: "url(/data/jaipur.jpg)",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  aspectRatio: `${12750}/${10920}`, // Overall aspect ratio for the entire grid
+                  ...gridStyles.aspectRatio,
                 }}
               >
                 <div
                   className="absolute inset-0 grid gap-1"
-                  style={{
-                    gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                  }}
+                  style={gridStyles.mainGrid}
                 >
                   {Array.from({ length: rows }, (_, row) => (
                     <>
