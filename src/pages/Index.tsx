@@ -1,16 +1,18 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TrafficData } from "@/types/traffic";
-import { FullTrafficGrid } from "@/components/FullTrafficGrid";
-import { StatsBar } from "@/components/StatsBar";
 import { Activity, TrendingUp } from "lucide-react";
 import { parseISTTimestamp } from "@/utils/timeUtils";
 import {
   getCellCenterCoordinates,
   getGoogleMapsUrl,
 } from "@/utils/coordinateUtils";
+
+// Lazy load heavy components
+const FullTrafficGrid = lazy(() => import("@/components/FullTrafficGrid").then(m => ({ default: m.FullTrafficGrid })));
+const StatsBar = lazy(() => import("@/components/StatsBar").then(m => ({ default: m.StatsBar })));
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("current");
@@ -68,10 +70,14 @@ export default function Index() {
 
           <TabsContent value="current">
             <div className="space-y-3">
-              <div className="mt-3">
-                <StatsBar data={currentData || []} />
-              </div>
-              <FullTrafficGrid data={currentData || []} rows={21} cols={15} />
+              <Suspense fallback={<div className="h-12 bg-muted/20 animate-pulse rounded-lg" />}>
+                <div className="mt-3">
+                  <StatsBar data={currentData || []} />
+                </div>
+              </Suspense>
+              <Suspense fallback={<div className="aspect-[15/21] bg-muted/20 animate-pulse rounded-lg" />}>
+                <FullTrafficGrid data={currentData || []} rows={21} cols={15} />
+              </Suspense>
             </div>
           </TabsContent>
 
