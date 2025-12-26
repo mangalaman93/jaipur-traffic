@@ -7,7 +7,10 @@ import { FullTrafficGrid } from "@/components/FullTrafficGrid";
 import { StatsBar } from "@/components/StatsBar";
 import { Activity, TrendingUp } from "lucide-react";
 import { parseISTTimestamp } from "@/utils/timeUtils";
-import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/utils/coordinateUtils";
+import {
+  getCellCenterCoordinates,
+  getGoogleMapsUrl,
+} from "@/utils/coordinateUtils";
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("current");
@@ -15,7 +18,9 @@ export default function Index() {
   const { data: currentData } = useQuery({
     queryKey: ["currentTraffic"],
     queryFn: async () => {
-      const response = await fetch("https://traffic-worker.mangalaman93.workers.dev/current");
+      const response = await fetch(
+        "https://traffic-worker.mangalaman93.workers.dev/current"
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch current traffic data");
       }
@@ -27,7 +32,9 @@ export default function Index() {
   const { data: congestedData } = useQuery({
     queryKey: ["congestedTraffic"],
     queryFn: async () => {
-      const response = await fetch("https://traffic-worker.mangalaman93.workers.dev/congested");
+      const response = await fetch(
+        "https://traffic-worker.mangalaman93.workers.dev/congested"
+      );
       if (!response.ok) {
         throw new Error("Failed to fetch congested traffic data");
       }
@@ -37,15 +44,14 @@ export default function Index() {
   });
 
   const displayData = activeTab === "current" ? currentData : congestedData;
-  const lastUpdated = displayData && displayData.length > 0
-    ? parseISTTimestamp(displayData[0].ts)
-    : new Date();
+  const lastUpdated =
+    displayData && displayData.length > 0
+      ? parseISTTimestamp(displayData[0].ts)
+      : new Date();
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader
-        lastUpdated={lastUpdated}
-      />
+      <DashboardHeader lastUpdated={lastUpdated} />
 
       <main className="container py-2 space-y-3">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -73,7 +79,9 @@ export default function Index() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Top 10 Congested Areas</h2>
+                  <h2 className="text-lg font-semibold text-foreground">
+                    Top 10 Congested Areas
+                  </h2>
                   <p className="text-sm text-muted-foreground">
                     Most congested traffic areas right now
                   </p>
@@ -85,15 +93,25 @@ export default function Index() {
                 {congestedData && congestedData.length > 0 ? (
                   congestedData.slice(0, 10).map((cell, index) => {
                     const totalTraffic = cell.yellow + cell.red + cell.dark_red;
-                    const severity = cell.dark_red > 0 ? "critical" : cell.red > 0 ? "high" : "medium";
+                    const severity =
+                      cell.dark_red > 0
+                        ? "critical"
+                        : cell.red > 0
+                          ? "high"
+                          : "medium";
                     const severityColors = {
-                      critical: "bg-traffic-dark-red/20 border-traffic-dark-red/50 text-traffic-dark-red",
+                      critical:
+                        "bg-traffic-dark-red/20 border-traffic-dark-red/50 text-traffic-dark-red",
                       high: "bg-traffic-red/20 border-traffic-red/50 text-traffic-red",
-                      medium: "bg-traffic-yellow/20 border-traffic-yellow/50 text-traffic-yellow"
+                      medium:
+                        "bg-traffic-yellow/20 border-traffic-yellow/50 text-traffic-yellow",
                     };
 
                     return (
-                      <div key={`${cell.x}-${cell.y}`} className="bg-card border border-border rounded-lg p-4">
+                      <div
+                        key={`${cell.x}-${cell.y}`}
+                        className="bg-card border border-border rounded-lg p-4"
+                      >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
                             {/* Rank */}
@@ -112,24 +130,39 @@ export default function Index() {
                             </div>
 
                             {/* Severity Badge */}
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium border ${severityColors[severity]}`}>
-                              {severity.charAt(0).toUpperCase() + severity.slice(1)}
+                            <div
+                              className={`px-2 py-1 rounded-full text-xs font-medium border ${severityColors[severity]}`}
+                            >
+                              {severity.charAt(0).toUpperCase() +
+                                severity.slice(1)}
                             </div>
                           </div>
 
                           {/* Traffic Counts */}
                           <div className="flex items-center gap-3">
                             <div className="text-center">
-                              <div className="text-lg font-bold text-traffic-yellow">{cell.yellow}</div>
-                              <div className="text-xs text-muted-foreground">Yellow</div>
+                              <div className="text-lg font-bold text-traffic-yellow">
+                                {cell.yellow}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Yellow
+                              </div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-traffic-red">{cell.red}</div>
-                              <div className="text-xs text-muted-foreground">Red</div>
+                              <div className="text-lg font-bold text-traffic-red">
+                                {cell.red}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Red
+                              </div>
                             </div>
                             <div className="text-center">
-                              <div className="text-lg font-bold text-traffic-dark-red">{cell.dark_red}</div>
-                              <div className="text-xs text-muted-foreground">Dark Red</div>
+                              <div className="text-lg font-bold text-traffic-dark-red">
+                                {cell.dark_red}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                Dark Red
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -145,9 +178,24 @@ export default function Index() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-2 px-3 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors text-xs font-medium"
                           >
-                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <svg
+                              className="w-3 h-3"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
                             </svg>
                             View on Google Maps
                           </a>
