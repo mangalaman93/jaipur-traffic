@@ -54,60 +54,89 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridP
 
   return (
     <>
-      <div className="overflow-x-auto">
-        <div 
-          className="grid gap-1 p-2 sm:p-4 bg-card/50 rounded-lg border border-border min-w-fit"
-          style={{ 
-            gridTemplateColumns: `auto repeat(${cols}, minmax(24px, 1fr))`,
-          }}
-        >
-          {/* Header row with column numbers */}
-          <div className="w-6 sm:w-8" /> {/* Empty corner */}
-          {Array.from({ length: cols }, (_, col) => (
-            <div 
-              key={`header-${col}`} 
-              className="text-center text-xs font-mono text-muted-foreground py-1"
-            >
-              {col}
+      <div className="space-y-4">
+        <div className="overflow-x-auto">
+          <div className="flex">
+            {/* Row labels column */}
+            <div className="flex flex-col">
+              <div className="w-6 sm:w-8 h-8 border border-border rounded-tl-lg" /> {/* Empty corner - top-left rounded */}
+              {Array.from({ length: rows }, (_, row) => (
+                <div 
+                  key={`row-label-${row}`} 
+                  className={cn(
+                    "flex items-center justify-center text-xs font-mono text-muted-foreground w-6 sm:w-8 border-l border-b border-border",
+                    row === rows - 1 && "border-l border-b border-r rounded-bl-lg"
+                  )}
+                  style={{ height: `calc((100% - ${rows - 1}px) / ${rows})` }}
+                >
+                  {row}
+                </div>
+              ))}
             </div>
-          ))}
 
-          {/* Grid rows */}
-          {Array.from({ length: rows }, (_, row) => (
-            <>
-              {/* Row label */}
-              <div 
-                key={`row-label-${row}`} 
-                className="flex items-center justify-center text-xs font-mono text-muted-foreground w-6 sm:w-8"
-              >
-                {row}
+            {/* Header row with column numbers */}
+            <div className="flex-1">
+              <div className="border border-border overflow-hidden">
+                <div 
+                  className="grid gap-1 bg-card"
+                  style={{ 
+                    gridTemplateColumns: `repeat(${cols}, minmax(24px, 1fr))`,
+                  }}
+                >
+                  {Array.from({ length: cols }, (_, col) => (
+                    <div 
+                      key={`header-${col}`} 
+                      className="text-center text-xs font-mono text-muted-foreground py-1 px-1"
+                    >
+                      {col}
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Cells */}
-              {Array.from({ length: cols }, (_, col) => {
-                const cell = dataMap.get(`${col}-${row}`);
-                const severity = getSeverity(cell);
-                const isHighlighted = severity !== "normal";
+              {/* Grid with background image and proper aspect ratio */}
+              <div 
+                className="relative bg-cover bg-center bg-no-repeat rounded-br-lg overflow-hidden border border-border border-t-0"
+                style={{ 
+                  backgroundImage: 'url(/data/jaipur.jpg)',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  aspectRatio: `${12750}/${10920}` // Overall aspect ratio for the entire grid
+                }}
+              >
+                <div className="absolute inset-0 grid gap-1" style={{ 
+                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                }}>
+                  {Array.from({ length: rows }, (_, row) => (
+                    <>
+                      {/* Grid cells */}
+                      {Array.from({ length: cols }, (_, col) => {
+                        const cell = dataMap.get(`${col}-${row}`);
+                        const severity = getSeverity(cell);
+                        const isHighlighted = severity !== "normal";
 
-                return (
-                  <button
-                    key={`cell-${col}-${row}`}
-                    onClick={() => handleCellClick(col, row)}
-                    className={cn(
-                      "aspect-square rounded-sm border transition-all duration-200",
-                      "hover:scale-110 hover:z-10 hover:shadow-lg",
-                      "focus:outline-none focus:ring-2 focus:ring-primary/50",
-                      getSeverityStyles(severity),
-                      isHighlighted && "cursor-pointer"
-                    )}
-                    title={cell ? `Grid [${col}, ${row}] - Y:${cell.yellow} R:${cell.red} DR:${cell.dark_red}` : `Grid [${col}, ${row}]`}
-                  />
-                );
-              })}
-            </>
-          ))}
+                        return (
+                          <button
+                            key={`cell-${col}-${row}`}
+                            onClick={() => handleCellClick(col, row)}
+                            className={cn(
+                              "rounded-sm border transition-all duration-200",
+                              "hover:scale-110 hover:z-10 hover:shadow-lg",
+                              "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                              getSeverityStyles(severity),
+                              isHighlighted && "cursor-pointer"
+                            )}
+                            title={cell ? `Grid [${col}, ${row}] - Y:${cell.yellow} R:${cell.red} DR:${cell.dark_red}` : `Grid [${col}, ${row}]`}
+                          />
+                        );
+                      })}
+                    </>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
 
       {/* Legend */}
       <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-4 text-xs sm:text-sm">
@@ -128,73 +157,58 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridP
           <span className="text-muted-foreground">Critical</span>
         </div>
       </div>
+    </div>
 
-      {/* Detail Dialog */}
-      <Dialog open={selectedCoords !== null} onOpenChange={() => { setSelectedCoords(null); setSelectedCell(null); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-mono">
+    {/* Dialog for cell details */}
+    <Dialog open={!!selectedCell} onOpenChange={(open) => !open && setSelectedCell(null)}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle>Traffic Grid Details</DialogTitle>
+        </DialogHeader>
+        {selectedCell ? (
+          <div className="space-y-4">
+            <div className="text-center text-lg font-mono">
               Grid [{selectedCoords?.x}, {selectedCoords?.y}]
-            </DialogTitle>
-          </DialogHeader>
-          
-          {selectedCell ? (
-            <div className="space-y-6">
-              {/* Zoomed cell visualization */}
-              <div 
-                className={cn(
-                  "w-32 h-32 mx-auto rounded-lg border-4 flex items-center justify-center",
-                  "transition-all duration-300",
-                  getSeverityStyles(getSeverity(selectedCell))
-                )}
-              >
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-foreground">
-                    {selectedCell.yellow + selectedCell.red + selectedCell.dark_red}
-                  </div>
-                  <div className="text-xs text-muted-foreground">total events</div>
-                </div>
-              </div>
+            </div>
 
-              {/* Breakdown */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="p-3 rounded-lg bg-traffic-yellow/20 border border-traffic-yellow/50">
-                  <div className="text-2xl font-bold text-traffic-yellow">{selectedCell.yellow}</div>
-                  <div className="text-xs text-muted-foreground">Yellow</div>
-                </div>
-                <div className="p-3 rounded-lg bg-traffic-red/20 border border-traffic-red/50">
-                  <div className="text-2xl font-bold text-traffic-red">{selectedCell.red}</div>
-                  <div className="text-xs text-muted-foreground">Red</div>
-                </div>
-                <div className="p-3 rounded-lg bg-traffic-dark-red/20 border border-traffic-dark-red/50">
-                  <div className="text-2xl font-bold text-traffic-dark-red">{selectedCell.dark_red}</div>
-                  <div className="text-xs text-muted-foreground">Dark Red</div>
-                </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="text-center p-3 rounded-lg bg-traffic-yellow/20 border border-traffic-yellow/50">
+                <div className="text-2xl font-bold text-traffic-yellow">{selectedCell.yellow}</div>
+                <div className="text-xs text-muted-foreground">Yellow</div>
               </div>
-
-              {/* Timestamp */}
-              <div className="text-center text-sm text-muted-foreground font-mono">
-                Last updated: {parseISTTimestamp(selectedCell.ts).toLocaleString('en-IN', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                  timeZone: 'Asia/Kolkata'
-                })}
+              <div className="text-center p-3 rounded-lg bg-traffic-red/20 border border-traffic-red/50">
+                <div className="text-2xl font-bold text-traffic-red">{selectedCell.red}</div>
+                <div className="text-xs text-muted-foreground">Red</div>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-traffic-dark-red/20 border border-traffic-dark-red/50">
+                <div className="text-2xl font-bold text-traffic-dark-red">{selectedCell.dark_red}</div>
+                <div className="text-xs text-muted-foreground">Dark Red</div>
               </div>
             </div>
-          ) : (
-            <div className="py-8 text-center text-muted-foreground">
-              <div className="w-24 h-24 mx-auto mb-4 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center">
-                <span className="text-2xl font-bold">0</span>
-              </div>
-              <p>No unusual traffic detected in this grid</p>
+
+            {/* Timestamp */}
+            <div className="text-center text-sm text-muted-foreground font-mono">
+              Last updated: {parseISTTimestamp(selectedCell.ts).toLocaleString('en-IN', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                timeZone: 'Asia/Kolkata'
+              })}
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          </div>
+        ) : (
+          <div className="py-8 text-center text-muted-foreground">
+            <div className="w-24 h-24 mx-auto mb-4 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center">
+              <span className="text-2xl font-bold">0</span>
+            </div>
+            <p>No unusual traffic detected in this grid</p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
