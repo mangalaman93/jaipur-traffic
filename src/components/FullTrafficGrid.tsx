@@ -2,49 +2,13 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
 import { parseISTTimestamp } from "@/utils/timeUtils";
+import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/utils/coordinateUtils";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-
-// Constants for coordinate calculation
-const JAIPUR_NORTH_WEST_LAT = 26.99;
-const JAIPUR_SOUTH_EAST_LAT = 26.78;
-const JAIPUR_NORTH_WEST_LNG = 75.65;
-const JAIPUR_SOUTH_EAST_LNG = 75.92;
-const CELL_HEIGHT_METERS = 1100;
-const CELL_WIDTH_METERS = 1800;
-const METERS_PER_DEGREE_LAT = 111320; // Approximate meters per degree of latitude
-
-// Helper functions for coordinate calculation
-const addMetersInLatitude = (latitude: number, meters: number): number => {
-  return latitude - meters / METERS_PER_DEGREE_LAT;
-};
-
-const addMetersInLongitude = (latitude: number, longitude: number, meters: number): number => {
-  const metersPerDegreeLng = METERS_PER_DEGREE_LAT * Math.cos(latitude * Math.PI / 180);
-  return longitude + meters / metersPerDegreeLng;
-};
-
-// Calculate center coordinates of a grid cell
-const getCellCenterCoordinates = (col: number, row: number): { lat: number; lng: number } => {
-  // Calculate the top-left corner of the cell
-  const cellTopLat = addMetersInLatitude(JAIPUR_NORTH_WEST_LAT, row * CELL_HEIGHT_METERS);
-  const cellLeftLng = addMetersInLongitude(JAIPUR_NORTH_WEST_LAT, JAIPUR_NORTH_WEST_LNG, col * CELL_WIDTH_METERS);
-  
-  // Calculate center by adding half cell dimensions
-  const centerLat = addMetersInLatitude(cellTopLat, CELL_HEIGHT_METERS / 2);
-  const centerLng = addMetersInLongitude(cellTopLat, cellLeftLng, CELL_WIDTH_METERS / 2);
-  
-  return { lat: centerLat, lng: centerLng };
-};
-
-// Generate Google Maps URL
-const getGoogleMapsUrl = (lat: number, lng: number): string => {
-  return `https://www.google.com/maps/@${lat},${lng},1200m/data=!3m1!1e3!5m1!1e1`;
-};
 
 interface FullTrafficGridProps {
   data: TrafficData[];
@@ -63,13 +27,13 @@ const getSeverity = (cell: TrafficData | undefined): "normal" | "yellow" | "red"
 const getSeverityStyles = (severity: "normal" | "yellow" | "red" | "darkRed") => {
   switch (severity) {
     case "darkRed":
-      return "bg-traffic-dark-red/80 border-traffic-dark-red";
+      return "bg-traffic-dark-red/60 border-traffic-dark-red";
     case "red":
-      return "bg-traffic-red/70 border-traffic-red";
+      return "bg-traffic-red/50 border-traffic-red";
     case "yellow":
-      return "bg-traffic-yellow/60 border-traffic-yellow";
+      return "bg-traffic-yellow/40 border-traffic-yellow";
     default:
-      return "bg-muted/30 border-border/50";
+      return "bg-muted/20 border-border/50";
   }
 };
 
@@ -98,8 +62,8 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridP
             <div className="flex flex-col">
               <div className="w-6 sm:w-8 h-8 border border-border rounded-tl-lg" /> {/* Empty corner - top-left rounded */}
               {Array.from({ length: rows }, (_, row) => (
-                <div 
-                  key={`row-label-${row}`} 
+                <div
+                  key={`row-label-${row}`}
                   className={cn(
                     "flex items-center justify-center text-xs font-mono text-muted-foreground w-6 sm:w-8 border-l border-b border-border",
                     row === rows - 1 && "border-l border-b border-r rounded-bl-lg"
@@ -114,15 +78,15 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridP
             {/* Header row with column numbers */}
             <div className="flex-1">
               <div className="border border-border overflow-hidden">
-                <div 
+                <div
                   className="grid gap-1 bg-card"
-                  style={{ 
+                  style={{
                     gridTemplateColumns: `repeat(${cols}, minmax(24px, 1fr))`,
                   }}
                 >
                   {Array.from({ length: cols }, (_, col) => (
-                    <div 
-                      key={`header-${col}`} 
+                    <div
+                      key={`header-${col}`}
                       className="text-center text-xs font-mono text-muted-foreground py-1 px-1"
                     >
                       {col}
@@ -132,16 +96,16 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridP
               </div>
 
               {/* Grid with background image and proper aspect ratio */}
-              <div 
+              <div
                 className="relative bg-cover bg-center bg-no-repeat rounded-br-lg overflow-hidden border border-border border-t-0"
-                style={{ 
+                style={{
                   backgroundImage: 'url(/data/jaipur.jpg)',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                   aspectRatio: `${12750}/${10920}` // Overall aspect ratio for the entire grid
                 }}
               >
-                <div className="absolute inset-0 grid gap-1" style={{ 
+                <div className="absolute inset-0 grid gap-1" style={{
                   gridTemplateColumns: `repeat(${cols}, 1fr)`,
                 }}>
                   {Array.from({ length: rows }, (_, row) => (
@@ -178,19 +142,19 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridP
       {/* Legend */}
       <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-4 text-xs sm:text-sm">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-muted/30 border border-border/50" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-muted/20 border border-border/50" />
           <span className="text-muted-foreground">Normal</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-traffic-yellow/60 border border-traffic-yellow" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-traffic-yellow/40 border border-traffic-yellow" />
           <span className="text-muted-foreground">Moderate</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-traffic-red/70 border border-traffic-red" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-traffic-red/50 border border-traffic-red" />
           <span className="text-muted-foreground">High</span>
         </div>
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-traffic-dark-red/80 border border-traffic-dark-red" />
+          <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-traffic-dark-red/60 border border-traffic-dark-red" />
           <span className="text-muted-foreground">Critical</span>
         </div>
       </div>
