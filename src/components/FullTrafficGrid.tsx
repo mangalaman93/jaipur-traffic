@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
 import { parseISTTimestamp } from "@/utils/timeUtils";
@@ -45,7 +45,7 @@ const getSeverityStyles = (
 };
 
 // Fixed row height for consistent layout without dynamic calc()
-const ROW_HEIGHT = 24;
+const ROW_HEIGHT = 53.3;
 const GRID_ASPECT_RATIO = 12750 / 10920;
 
 export function FullTrafficGrid({
@@ -70,7 +70,7 @@ export function FullTrafficGrid({
 
   // Memoize grid template styles to avoid recalculation
   const gridStyles = useMemo(() => ({
-    headerGrid: { gridTemplateColumns: `repeat(${cols}, minmax(24px, 1fr))` },
+    headerGrid: { gridTemplateColumns: `repeat(${cols}, minmax(2rem, 1fr))` },
     mainGrid: { gridTemplateColumns: `repeat(${cols}, 1fr)` },
     aspectRatio: { aspectRatio: GRID_ASPECT_RATIO },
   }), [cols]);
@@ -88,13 +88,13 @@ export function FullTrafficGrid({
           <div className="flex">
             {/* Row labels column */}
             <div className="flex flex-col">
-              <div className="w-6 sm:w-8 h-8 border border-border rounded-tl-lg" />{" "}
+              <div className="w-8 h-6 border border-border rounded-tl-lg" />{" "}
               {/* Empty corner - top-left rounded */}
               {Array.from({ length: rows }, (_, row) => (
                 <div
                   key={`row-label-${row}`}
                   className={cn(
-                    "flex items-center justify-center text-xs font-mono text-muted-foreground w-6 sm:w-8 border-l border-b border-border",
+                    "flex items-center justify-center text-xs font-mono text-muted-foreground w-8 h-12 border-l border-b border-border",
                     row === rows - 1 &&
                       "border-l border-b border-r rounded-bl-lg"
                   )}
@@ -107,7 +107,7 @@ export function FullTrafficGrid({
 
             {/* Header row with column numbers */}
             <div className="flex-1">
-              <div className="border border-border overflow-hidden">
+              <div className="border border-border overflow-hidden rounded-tr-lg">
                 <div
                   className="grid gap-1 bg-card"
                   style={gridStyles.headerGrid}
@@ -136,7 +136,7 @@ export function FullTrafficGrid({
                   style={gridStyles.mainGrid}
                 >
                   {Array.from({ length: rows }, (_, row) => (
-                    <>
+                    <React.Fragment key={`row-${row}`}>
                       {/* Grid cells */}
                       {Array.from({ length: cols }, (_, col) => {
                         const cell = dataMap.get(`${col}-${row}`);
@@ -162,7 +162,7 @@ export function FullTrafficGrid({
                           />
                         );
                       })}
-                    </>
+                    </React.Fragment>
                   ))}
                 </div>
               </div>

@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TrafficData } from "@/types/traffic";
-import { Activity, TrendingUp } from "lucide-react";
+import Activity from "lucide-react/dist/esm/icons/activity";
+import TrendingUp from "lucide-react/dist/esm/icons/trending-up";
 import { parseISTTimestamp } from "@/utils/timeUtils";
 import {
   getCellCenterCoordinates,
@@ -172,7 +173,7 @@ export default function Index() {
                                 Dark Red
                               </div>
                             </div>
-                            
+
                             {/* Google Maps Link - inline on mobile */}
                             <a
                               href={getGoogleMapsUrl(

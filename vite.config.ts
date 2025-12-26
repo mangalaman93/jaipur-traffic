@@ -18,18 +18,39 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Vendor chunks
-          'react-vendor': ['react', 'react-dom'],
-          'router': ['react-router-dom'],
-          'query': ['@tanstack/react-query'],
-          'ui-vendor': ['@radix-ui/react-toast', '@radix-ui/react-tooltip', 'sonner'],
-          'charts': ['recharts'],
-          'utils': ['date-fns', 'clsx'],
-          'icons': ['lucide-react'],
+        manualChunks(id) {
+          // Split react and react-dom separately
+          if (id.includes('react') && id.includes('react-dom')) {
+            return 'react-dom';
+          }
+          if (id.includes('react')) {
+            return 'react-core';
+          }
+          // Split router separately
+          if (id.includes('react-router-dom')) {
+            return 'router';
+          }
+          // Split query library
+          if (id.includes('@tanstack/react-query')) {
+            return 'query';
+          }
+          // Split UI components
+          if (id.includes('@radix-ui')) {
+            return 'ui-vendor';
+          }
+          // Split utilities
+          if (id.includes('date-fns') || id.includes('clsx')) {
+            return 'utils';
+          }
+          // Split icons
+          if (id.includes('lucide-react')) {
+            return 'icons';
+          }
         },
       },
     },
     chunkSizeWarningLimit: 1000,
+    target: 'esnext',
+    cssCodeSplit: true,
   },
 }));

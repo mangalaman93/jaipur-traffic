@@ -1,4 +1,5 @@
-import { Activity } from "lucide-react";
+import Activity from "lucide-react/dist/esm/icons/activity";
+import { getHoursAgo } from "@/utils/timeUtils";
 
 interface DashboardHeaderProps {
   lastUpdated?: Date | null;
@@ -25,18 +26,23 @@ export function DashboardHeader({ lastUpdated }: DashboardHeaderProps) {
 
           <div className="flex items-center gap-4">
             {lastUpdated && (
-              <span className="text-xs text-muted-foreground font-mono hidden sm:block">
-                Last Updated:{" "}
-                {lastUpdated.toLocaleString("en-IN", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  timeZone: "Asia/Kolkata",
-                })}
-              </span>
+              <div className="text-right hidden sm:block">
+                <div className="text-xs text-muted-foreground font-mono">
+                  Last Updated:{" "}
+                  {lastUpdated.toLocaleString("en-IN", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    timeZone: "Asia/Kolkata",
+                  })}
+                </div>
+                <div className="text-xs text-primary font-medium">
+                  {getHoursAgo(lastUpdated)}
+                </div>
+              </div>
             )}
           </div>
         </div>
