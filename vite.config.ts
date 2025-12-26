@@ -19,12 +19,9 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          // Split react and react-dom separately
-          if (id.includes('react') && id.includes('react-dom')) {
-            return 'react-dom';
-          }
-          if (id.includes('react')) {
-            return 'react-core';
+          // Keep React and React-DOM together
+          if (id.includes('react') || id.includes('react-dom')) {
+            return 'react-vendor';
           }
           // Split router separately
           if (id.includes('react-router-dom')) {
