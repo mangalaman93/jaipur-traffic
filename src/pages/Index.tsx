@@ -47,7 +47,7 @@ export default function Index() {
         lastUpdated={lastUpdated}
       />
 
-      <main className="container py-6 space-y-6">
+      <main className="container py-2 space-y-3">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-md grid-cols-2">
             <TabsTrigger value="current" className="gap-2">
@@ -60,18 +60,16 @@ export default function Index() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="mt-6">
+          <div className="mt-3">
             <StatsBar data={displayData || []} />
           </div>
 
           <TabsContent value="current">
-            <div className="space-y-4">
-              <FullTrafficGrid data={currentData || []} rows={21} cols={15} />
-            </div>
+            <FullTrafficGrid data={currentData || []} rows={21} cols={15} />
           </TabsContent>
 
           <TabsContent value="congested">
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-foreground">Top 10 Congested Areas</h2>
@@ -86,7 +84,7 @@ export default function Index() {
         </Tabs>
       </main>
 
-      <footer className="border-t border-border py-4 mt-8">
+      <footer className="border-t border-border py-1 mt-3">
         <div className="container text-center text-xs text-muted-foreground">
           Traffic Dashboard • Connected to Neon Postgres (readonly)
         </div>
