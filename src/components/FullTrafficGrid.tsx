@@ -48,6 +48,32 @@ const getSeverityStyles = (
 const ROW_HEIGHT = 53.3;
 const GRID_ASPECT_RATIO = 12750 / 10920;
 
+// Helper to calculate actual row height from grid container
+const useRowHeight = (containerRef: React.RefObject<HTMLDivElement>, rows: number) => {
+  const [rowHeight, setRowHeight] = useState(ROW_HEIGHT);
+
+  React.useEffect(() => {
+    const updateRowHeight = () => {
+      if (containerRef.current) {
+        const { height } = containerRef.current.getBoundingClientRect();
+        const calculatedRowHeight = height / rows;
+        if (calculatedRowHeight > 0) {
+          setRowHeight(calculatedRowHeight);
+        }
+      }
+    };
+
+    updateRowHeight();
+    const resizeObserver = new ResizeObserver(updateRowHeight);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    return () => resizeObserver.disconnect();
+  }, [containerRef, rows]);
+
+  return rowHeight;
+};
+
 export function FullTrafficGrid({
   data,
   rows = 21,
@@ -58,6 +84,9 @@ export function FullTrafficGrid({
     x: number;
     y: number;
   } | null>(null);
+
+  const gridContainerRef = React.useRef<HTMLDivElement>(null);
+  const rowHeight = useRowHeight(gridContainerRef, rows);
 
   // Memoize the data map to prevent recreation on every render
   const dataMap = useMemo(() => {
@@ -88,7 +117,10 @@ export function FullTrafficGrid({
           <div className="flex">
             {/* Row labels column */}
             <div className="flex flex-col">
-              <div className="w-8 h-6 border border-border rounded-tl-lg" />{" "}
+              <div
+                className="w-8 border border-border rounded-tl-lg flex items-center justify-center text-xs font-mono text-muted-foreground"
+                style={{ height: rowHeight }}
+              />
               {/* Empty corner - top-left rounded */}
               {Array.from({ length: rows }, (_, row) => (
                 <div
@@ -98,7 +130,7 @@ export function FullTrafficGrid({
                     row === rows - 1 &&
                       "border-l border-b border-r rounded-bl-lg"
                   )}
-                  style={{ height: ROW_HEIGHT }}
+                  style={{ height: rowHeight }}
                 >
                   {row}
                 </div>
@@ -109,13 +141,14 @@ export function FullTrafficGrid({
             <div className="flex-1">
               <div className="border border-border overflow-hidden rounded-tr-lg">
                 <div
-                  className="grid gap-1 bg-card"
+                  className="grid gap-0 bg-card"
                   style={gridStyles.headerGrid}
                 >
                   {Array.from({ length: cols }, (_, col) => (
                     <div
                       key={`header-${col}`}
-                      className="text-center text-xs font-mono text-muted-foreground py-1 px-1"
+                      className="flex items-center justify-center text-xs font-mono text-muted-foreground px-1 border border-border"
+                      style={{ height: rowHeight }}
                     >
                       {col}
                     </div>
@@ -125,6 +158,7 @@ export function FullTrafficGrid({
 
               {/* Grid with background image and proper aspect ratio */}
               <div
+                ref={gridContainerRef}
                 className="relative bg-cover bg-center bg-no-repeat rounded-br-lg overflow-hidden border border-border border-t-0"
                 style={{
                   backgroundImage: "url(/data/jaipur.jpg)",
