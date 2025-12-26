@@ -9,7 +9,6 @@ import { Activity, TrendingUp } from "lucide-react";
 import { parseISTTimestamp } from "@/utils/timeUtils";
 
 export default function Index() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState("current");
 
   const { data: currentData, isLoading: currentLoading, refetch: refetchCurrent } = useQuery({
@@ -36,15 +35,6 @@ export default function Index() {
     },
   });
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    try {
-      await Promise.all([refetchCurrent(), refetchCongested()]);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
   const displayData = activeTab === "current" ? currentData : congestedData;
   const isLoading = activeTab === "current" ? currentLoading : congestedLoading;
   const lastUpdated = displayData && displayData.length > 0
@@ -54,8 +44,6 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader
-        onRefresh={handleRefresh}
-        isRefreshing={isRefreshing}
         lastUpdated={lastUpdated}
       />
 
@@ -78,14 +66,6 @@ export default function Index() {
 
           <TabsContent value="current">
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Current Traffic Status</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Real-time traffic data across all grids
-                  </p>
-                </div>
-              </div>
               <FullTrafficGrid data={currentData || []} rows={21} cols={15} />
             </div>
           </TabsContent>

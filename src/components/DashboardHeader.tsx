@@ -1,13 +1,10 @@
-import { Activity, RefreshCw } from "lucide-react";
-import { Button } from "./ui/button";
+import { Activity } from "lucide-react";
 
 interface DashboardHeaderProps {
-  onRefresh?: () => void;
-  isRefreshing?: boolean;
   lastUpdated?: Date | null;
 }
 
-export function DashboardHeader({ onRefresh, isRefreshing, lastUpdated }: DashboardHeaderProps) {
+export function DashboardHeader({ lastUpdated }: DashboardHeaderProps) {
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div className="container py-4">
@@ -36,16 +33,6 @@ export function DashboardHeader({ onRefresh, isRefreshing, lastUpdated }: Dashbo
                 })}
               </span>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onRefresh}
-              disabled={isRefreshing}
-              className="gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
           </div>
         </div>
       </div>
