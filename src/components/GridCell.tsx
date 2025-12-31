@@ -80,7 +80,9 @@ export function GridCell({
     isHighlighted = severity !== "normal" || isTop10;
     styles = getSeverityStyles(severity);
     if (cell) {
-      title = `Grid [${col}, ${row}] - Y:${cell.yellow} R:${cell.red} DR:${cell.dark_red}${isTop10 ? " - TOP 10!" : ""}`;
+      title = `Grid [${col}, ${row}] - Y:${cell.yellow} R:${cell.red} DR:${cell.dark_red}${
+        isTop10 ? " - TOP 10!" : ""
+      }`;
     }
   }
 

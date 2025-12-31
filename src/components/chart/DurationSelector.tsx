@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { DURATION_OPTIONS } from "@/constants/traffic";
 
 interface DurationSelectorProps {
@@ -13,7 +14,11 @@ export function DurationSelector({
     <select
       value={selectedDuration}
       onChange={(e) => onDurationChange?.(e.target.value)}
-      className="px-3 py-1 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer"
+      className={cn(
+        "px-3 py-1 text-sm bg-background border border-border rounded-md",
+        "focus:outline-none focus:ring-2 focus:ring-primary",
+        "focus:border-transparent cursor-pointer",
+      )}
     >
       {Object.entries(DURATION_OPTIONS).map(([value, label]) => (
         <option key={value} value={value}>

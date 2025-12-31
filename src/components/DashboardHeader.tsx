@@ -1,4 +1,5 @@
 import Activity from "lucide-react/dist/esm/icons/activity";
+import { cn } from "@/lib/utils";
 import { formatDetailedTime } from "@/utils/timeFormat";
 import { getHoursAgo } from "@/utils/timeUtils";
 import { GOOGLE_MAPS_URL } from "@/constants/traffic";
@@ -47,7 +48,11 @@ export function DashboardHeader({ lastUpdated }: DashboardHeaderProps) {
                   href={GOOGLE_MAPS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-colors"
+                  className={cn(
+                    "inline-flex items-center gap-1 px-2 py-1 text-xs",
+                    "bg-primary/10 text-primary rounded-md",
+                    "hover:bg-primary/20 transition-colors",
+                  )}
                 >
                   <MapIcon />
                   Grid Mapping

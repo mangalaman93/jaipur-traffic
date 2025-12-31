@@ -2,17 +2,10 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
-import { parseISTTimestamp } from "@/utils/timeUtils";
-import {
-  getCellCenterCoordinates,
-  getGoogleMapsUrl,
-} from "@/utils/coordinateUtils";
-import {
-  calculateSeverityDifferences,
-  calculateTotalTraffic,
-} from "@/utils/trafficUtils";
+import { parseISTTimestamp, getHoursAgo } from "@/utils/timeUtils";
+import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/utils/coordinateUtils";
+import { calculateSeverityDifferences, calculateTotalTraffic } from "@/utils/trafficUtils";
 import { formatRangeTime } from "@/utils/timeFormat";
-import { getHoursAgo } from "@/utils/timeUtils";
 import {
   Dialog,
   DialogContent,
@@ -36,7 +29,6 @@ interface FullTrafficGridProps {
   activeTab?: string;
 }
 
-// Fixed row height for consistent layout without dynamic calc()
 const ROW_HEIGHT = 53.3;
 const GRID_ASPECT_RATIO = GRID_DIMENSIONS.ASPECT_RATIO;
 
@@ -66,6 +58,40 @@ const useRowHeight = (
   }, [containerRef, rows]);
 
   return rowHeight;
+};
+
+const getTop10SeverityCells = (data: TrafficData[]): Set<string> => {
+  const processedData = data
+    .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
+    .map((cell) => {
+      const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
+      return { ...cell, p95Diff, p99Diff };
+    });
+
+  const p99Cells = processedData
+    .filter((cell) => cell.p99Diff > 0)
+    .sort((a, b) => b.p99Diff - a.p99Diff)
+    .slice(0, 10);
+
+  if (p99Cells.length >= 10) {
+    return new Set(p99Cells.map((cell) => `${cell.x}-${cell.y}`));
+  }
+
+  const p95Cells = processedData
+    .filter((cell) => cell.p95Diff > 0 && cell.p99Diff <= 0)
+    .sort((a, b) => b.p95Diff - a.p95Diff)
+    .slice(0, 10 - p99Cells.length);
+
+  return new Set([...p99Cells, ...p95Cells].map((cell) => `${cell.x}-${cell.y}`));
+};
+
+const getTop10TrafficCells = (data: TrafficData[]): Set<string> => {
+  const sortedData = data
+    .filter((cell) => calculateTotalTraffic(cell) > 0)
+    .sort((a, b) => calculateTotalTraffic(b) - calculateTotalTraffic(a))
+    .slice(0, 10);
+
+  return new Set(sortedData.map((cell) => `${cell.x}-${cell.y}`));
 };
 
 export function FullTrafficGrid({
@@ -116,15 +142,18 @@ export function FullTrafficGrid({
     enabled: !!selectedCoords,
   });
 
-  // Handle initialSelectedCell prop changes and tab switches
   React.useEffect(() => {
-    if (initialSelectedCell && (!selectedCell || selectedCell.x !== initialSelectedCell.x || selectedCell.y !== initialSelectedCell.y)) {
+    if (
+      initialSelectedCell &&
+      (!selectedCell ||
+        selectedCell.x !== initialSelectedCell.x ||
+        selectedCell.y !== initialSelectedCell.y)
+    ) {
       setSelectedCell(initialSelectedCell);
       setSelectedCoords({ x: initialSelectedCell.x, y: initialSelectedCell.y });
     }
   }, [initialSelectedCell, selectedCell]);
 
-  // Clear selected cell when active tab changes
   React.useEffect(() => {
     setSelectedCell(null);
     setSelectedCoords(null);
@@ -133,7 +162,6 @@ export function FullTrafficGrid({
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   const rowHeight = useRowHeight(gridContainerRef, rows);
 
-  // Memoize the data map to prevent recreation on every render
   const dataMap = useMemo(() => {
     const map = new Map<string, TrafficData>();
     data.forEach((item) => {
@@ -142,7 +170,6 @@ export function FullTrafficGrid({
     return map;
   }, [data]);
 
-  // Memoize grid template styles to avoid recalculation
   const gridStyles = useMemo(
     () => ({
       headerGrid: { gridTemplateColumns: `repeat(${cols}, minmax(2rem, 1fr))` },
@@ -152,48 +179,12 @@ export function FullTrafficGrid({
     [cols],
   );
 
-  // Memoize Top 10 areas for highlighting based on mode
   const top10Cells = useMemo((): Set<string> => {
     if (!highlightTop10) return new Set<string>();
 
-    let sortedData;
-
-    if (mode === "severity") {
-      // For severity mode, prioritize P99 differences, fallback to P95
-      sortedData = [...data]
-        .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
-        .map((cell) => {
-          const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
-          return { ...cell, p95Diff, p99Diff };
-        });
-
-      // First try to find cells with P99 differences
-      const p99Cells = sortedData
-        .filter((cell) => cell.p99Diff > 0)
-        .sort((a, b) => b.p99Diff - a.p99Diff)
-        .slice(0, 10);
-
-      // If we have 10+ cells with P99 differences, use them
-      if (p99Cells.length >= 10) {
-        sortedData = p99Cells;
-      } else {
-        // Otherwise, use P95 differences for remaining slots
-        const p95Cells = sortedData
-          .filter((cell) => cell.p95Diff > 0 && cell.p99Diff <= 0)
-          .sort((a, b) => b.p95Diff - a.p95Diff)
-          .slice(0, 10 - p99Cells.length);
-
-        sortedData = [...p99Cells, ...p95Cells].slice(0, 10);
-      }
-    } else {
-      // For traffic mode, sort by total traffic counts
-      sortedData = [...data]
-        .filter((cell) => calculateTotalTraffic(cell) > 0)
-        .sort((a, b) => calculateTotalTraffic(b) - calculateTotalTraffic(a))
-        .slice(0, 10);
-    }
-
-    return new Set(sortedData.map((cell) => `${cell.x}-${cell.y}`));
+    return mode === "severity"
+      ? getTop10SeverityCells(data)
+      : getTop10TrafficCells(data);
   }, [data, highlightTop10, mode]);
 
   const handleCellClick = (x: number, y: number) => {
@@ -316,11 +307,11 @@ export function FullTrafficGrid({
         onOpenChange={(open) => !open && setSelectedCell(null)}
       >
         <DialogContent
-          className="
-            sm:max-w-[800px] max-h-[90vh] overflow-y-auto
-            data-[state=open]:slide-in-from-top-[10%]
-            data-[state=closed]:slide-out-to-top-[10%]
-          "
+          className={cn(
+            "sm:max-w-[800px] max-h-[90vh] overflow-y-auto",
+            "data-[state=open]:slide-in-from-top-[10%]",
+            "data-[state=closed]:slide-out-to-top-[10%]",
+          )}
         >
           <DialogHeader>
             <div className="flex items-center justify-between">
@@ -331,27 +322,25 @@ export function FullTrafficGrid({
                 <div className="text-xs text-muted-foreground font-mono">
                   Last updated:{" "}
                   {selectedCell?.ts
-                    ? `${formatRangeTime(parseISTTimestamp(selectedCell.ts))}
-                       (${getHoursAgo(parseISTTimestamp(selectedCell.ts))})`
+                    ? `${formatRangeTime(parseISTTimestamp(selectedCell.ts))} (${getHoursAgo(
+                        parseISTTimestamp(selectedCell.ts)
+                      )})`
                     : "N/A"}
                 </div>
               </div>
               {selectedCoords && (
                 <a
                   href={getGoogleMapsUrl(
-                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y)
-                      .lat,
-                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y)
-                      .lng,
+                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y).lat,
+                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y).lng,
                   )}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="
-                    inline-flex items-center gap-2 px-4 py-2
-                    bg-primary text-primary-foreground rounded-lg
-                    hover:bg-primary/90 transition-colors
-                    text-sm font-medium
-                  "
+                  className={cn(
+                    "inline-flex items-center gap-2 px-4 py-2",
+                    "bg-primary text-primary-foreground rounded-lg",
+                    "hover:bg-primary/90 transition-colors text-sm font-medium",
+                  )}
                 >
                   <svg
                     className="w-4 h-4"

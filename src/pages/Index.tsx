@@ -15,7 +15,6 @@ import {
   API_ENDPOINTS,
 } from "@/constants/traffic";
 
-// Lazy load heavy components
 const FullTrafficGrid = lazy(() =>
   import("@/components/FullTrafficGrid").then((m) => ({
     default: m.FullTrafficGrid,
@@ -24,6 +23,54 @@ const FullTrafficGrid = lazy(() =>
 const StatsBar = lazy(() =>
   import("@/components/StatsBar").then((m) => ({ default: m.StatsBar })),
 );
+
+const getTopSeverityAreas = (currentData: TrafficData[]) => {
+  if (!currentData) return [];
+
+  const processedData = currentData
+    .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
+    .map((cell) => {
+      const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
+      return {
+        ...cell,
+        p95Diff,
+        p99Diff,
+        severityLevel:
+          cell.latest_severity! > cell.p99!
+            ? "high"
+            : cell.latest_severity! > cell.p95!
+              ? "moderate"
+              : "normal",
+      };
+    });
+
+  const p99Cells = processedData
+    .filter((cell) => cell.p99Diff > 0)
+    .sort((a, b) => b.p99Diff - a.p99Diff)
+    .slice(0, 10);
+
+  if (p99Cells.length >= 10) {
+    return p99Cells;
+  }
+
+  const p95Cells = processedData
+    .filter((cell) => cell.p95Diff > 0 && cell.p99Diff <= 0)
+    .sort((a, b) => b.p95Diff - a.p95Diff)
+    .slice(0, 10 - p99Cells.length);
+
+  return [...p99Cells, ...p95Cells].slice(0, 10);
+};
+
+const getLastUpdated = (currentData: TrafficData[] | undefined): Date => {
+  if (!currentData || currentData.length === 0) return new Date();
+
+  return parseISTTimestamp(
+    currentData.reduce(
+      (max, d) => (new Date(d.ts) > new Date(max.ts) ? d : max),
+      currentData[0],
+    ).ts,
+  );
+};
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("traffic");
@@ -41,7 +88,6 @@ export default function Index() {
     },
   });
 
-  // Use the same data for congested areas (no duplicate API call)
   const congestedData = currentData;
 
   const { data: sustainedData } = useQuery({
@@ -56,57 +102,9 @@ export default function Index() {
     },
   });
 
-  // Calculate Top 10 severity areas based on P99-first, P95-fallback logic
-  const topSeverityAreas = useMemo(() => {
-    if (!currentData) return [];
+  const topSeverityAreas = useMemo(() => getTopSeverityAreas(currentData || []), [currentData]);
 
-    const processedData = currentData
-      .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
-      .map((cell) => {
-        const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
-        return {
-          ...cell,
-          p95Diff,
-          p99Diff,
-          severityLevel:
-            cell.latest_severity! > cell.p99!
-              ? "high"
-              : cell.latest_severity! > cell.p95!
-                ? "moderate"
-                : "normal",
-        };
-      });
-
-    // First try to find cells with P99 differences
-    const p99Cells = processedData
-      .filter((cell) => cell.p99Diff > 0)
-      .sort((a, b) => b.p99Diff - a.p99Diff)
-      .slice(0, 10);
-
-    // If we have 10+ cells with P99 differences, use them
-    if (p99Cells.length >= 10) {
-      return p99Cells;
-    } else {
-      // Otherwise, use P95 differences for remaining slots
-      const p95Cells = processedData
-        .filter((cell) => cell.p95Diff > 0 && cell.p99Diff <= 0)
-        .sort((a, b) => b.p95Diff - a.p95Diff)
-        .slice(0, 10 - p99Cells.length);
-
-      return [...p99Cells, ...p95Cells].slice(0, 10);
-    }
-  }, [currentData]);
-
-  // Get the maximum timestamp from current data for last updated time
-  const lastUpdated =
-    currentData && currentData.length > 0
-      ? parseISTTimestamp(
-          currentData.reduce(
-            (max, d) => (new Date(d.ts) > new Date(max.ts) ? d : max),
-            currentData[0],
-          ).ts,
-        )
-      : new Date();
+  const lastUpdated = useMemo(() => getLastUpdated(currentData), [currentData]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,15 +113,24 @@ export default function Index() {
       <main className="container py-2 space-y-3">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full max-w-lg grid-cols-3 h-auto sm:h-10 p-1 sm:p-1">
-            <TabsTrigger value="traffic" className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0">
+            <TabsTrigger
+              value="traffic"
+              className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0"
+            >
               <Activity className="w-4 h-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm leading-tight text-center">Traffic Analysis</span>
             </TabsTrigger>
-            <TabsTrigger value="severity" className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0">
+            <TabsTrigger
+              value="severity"
+              className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0"
+            >
               <BarChart3 className="w-4 h-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm leading-tight text-center">Severity Analysis</span>
             </TabsTrigger>
-            <TabsTrigger value="sustained" className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0">
+            <TabsTrigger
+              value="sustained"
+              className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0"
+            >
               <Clock className="w-4 h-4 flex-shrink-0" />
               <span className="text-xs sm:text-sm leading-tight text-center">Sustained Traffic</span>
             </TabsTrigger>

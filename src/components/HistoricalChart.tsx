@@ -10,6 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { TrafficData } from "@/types/traffic";
+import { cn } from "@/lib/utils";
 import { formatRangeTime, formatChartTime } from "@/utils/timeFormat";
 import { parseISTTimestamp } from "@/utils/timeUtils";
 import { ChartTooltip } from "./chart/ChartTooltip";
@@ -83,7 +84,11 @@ export function HistoricalChart({
           <select
             value={selectedMetric}
             onChange={(e) => setSelectedMetric(e.target.value as MetricType)}
-            className="px-3 py-1 text-sm bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent cursor-pointer"
+            className={cn(
+              "px-3 py-1 text-sm bg-background border border-border rounded-md",
+              "focus:outline-none focus:ring-2 focus:ring-primary",
+              "focus:border-transparent cursor-pointer",
+            )}
           >
             {METRIC_CONFIG.map((option) => (
               <option key={option.value} value={option.value}>

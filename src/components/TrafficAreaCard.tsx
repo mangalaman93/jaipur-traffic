@@ -1,5 +1,6 @@
 import React from "react";
 import { TrafficData } from "@/types/traffic";
+import { cn } from "@/lib/utils";
 import {
   getCellCenterCoordinates,
   getGoogleMapsUrl,
@@ -34,7 +35,13 @@ export function TrafficAreaCard({
         {/* Left section: Rank, Grid Info, Severity */}
         <div className="flex items-center gap-3">
           {/* Rank */}
-          <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+          <div
+            className={cn(
+              "flex-shrink-0 flex items-center justify-center",
+              "w-8 h-8 rounded-full bg-primary/10",
+              "text-primary font-bold text-sm",
+            )}
+          >
             {index + 1}
           </div>
 
@@ -122,12 +129,12 @@ export function TrafficAreaCard({
             )}
             target="_blank"
             rel="noopener noreferrer"
-            className="
-              flex-shrink-0 inline-flex items-center justify-center
-              w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1
-              bg-primary text-primary-foreground rounded-full sm:rounded
-              hover:bg-primary/90 transition-colors text-xs font-medium
-            "
+            className={cn(
+              "flex-shrink-0 inline-flex items-center justify-center",
+              "w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1",
+              "bg-primary text-primary-foreground rounded-full sm:rounded",
+              "hover:bg-primary/90 transition-colors text-xs font-medium",
+            )}
             title="View on Google Maps"
           >
             <svg
@@ -154,12 +161,12 @@ export function TrafficAreaCard({
 
           {/* Details Button */}
           <button
-            className="
-              flex-shrink-0 inline-flex items-center justify-center
-              w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1
-              bg-secondary text-secondary-foreground rounded-full sm:rounded
-              hover:bg-secondary/80 transition-colors text-xs font-medium
-            "
+            className={cn(
+              "flex-shrink-0 inline-flex items-center justify-center",
+              "w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1",
+              "bg-secondary text-secondary-foreground rounded-full sm:rounded",
+              "hover:bg-secondary/80 transition-colors text-xs font-medium",
+            )}
             title="View Details"
             onClick={() => onDetailsClick?.()}
           >
