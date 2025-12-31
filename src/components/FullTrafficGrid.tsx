@@ -18,6 +18,7 @@ interface FullTrafficGridProps {
   rows?: number;
   cols?: number;
   mode?: "traffic" | "severity";
+  highlightTop10?: boolean;
 }
 
 const getSeverity = (cell: TrafficData | undefined): "normal" | "yellow" | "red" | "darkRed" => {
@@ -92,7 +93,7 @@ const useRowHeight = (containerRef: React.RefObject<HTMLDivElement>, rows: numbe
   return rowHeight;
 };
 
-export function FullTrafficGrid({ data, rows = 21, cols = 15, mode = "traffic" }: FullTrafficGridProps) {
+export function FullTrafficGrid({ data, rows = 21, cols = 15, mode = "traffic", highlightTop10 = false }: FullTrafficGridProps) {
   const [selectedCell, setSelectedCell] = useState<TrafficData | null>(null);
   const [selectedCoords, setSelectedCoords] = useState<{ x: number; y: number } | null>(null);
 
@@ -114,6 +115,18 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15, mode = "traffic" }
     mainGrid: { gridTemplateColumns: `repeat(${cols}, 1fr)` },
     aspectRatio: { aspectRatio: GRID_ASPECT_RATIO },
   }), [cols]);
+
+  // Memoize Top 10 congested areas for highlighting
+  const top10Cells = useMemo(() => {
+    if (!highlightTop10) return new Set<string>();
+
+    const sortedData = [...data]
+      .filter(cell => cell.yellow + cell.red + cell.dark_red > 0)
+      .sort((a, b) => (b.yellow + b.red + b.dark_red) - (a.yellow + a.red + a.dark_red))
+      .slice(0, 10);
+
+    return new Set(sortedData.map(cell => `${cell.x}-${cell.y}`));
+  }, [data, highlightTop10]);
 
   const handleCellClick = (x: number, y: number) => {
     const cell = dataMap.get(`${x}-${y}`);
@@ -186,23 +199,26 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15, mode = "traffic" }
                       {Array.from({ length: cols }, (_, col) => {
                         const cell = dataMap.get(`${col}-${row}`);
 
+                        const cellKey = `${col}-${row}`;
+                        const isTop10 = highlightTop10 && top10Cells.has(cellKey);
+
                         let isHighlighted = false;
                         let styles = "";
                         let title = `Grid [${col}, ${row}]`;
 
                         if (mode === "severity") {
                           const severityLevel = getSeverityLevel(cell);
-                          isHighlighted = severityLevel !== "normal";
+                          isHighlighted = severityLevel !== "normal" || isTop10;
                           styles = getSeverityLevelStyles(severityLevel);
                           if (cell) {
-                            title = `Grid [${col}, ${row}] - Severity: ${cell.latest_severity || 'N/A'} (P95: ${cell.p95 || 'N/A'}, P99: ${cell.p99 || 'N/A'})`;
+                            title = `Grid [${col}, ${row}] - Severity: ${cell.latest_severity || 'N/A'} (P95: ${cell.p95 || 'N/A'}, P99: ${cell.p99 || 'N/A'})${isTop10 ? ' - TOP 10!' : ''}`;
                           }
                         } else {
                           const severity = getSeverity(cell);
-                          isHighlighted = severity !== "normal";
+                          isHighlighted = severity !== "normal" || isTop10;
                           styles = getSeverityStyles(severity);
                           if (cell) {
-                            title = `Grid [${col}, ${row}] - Y:${cell.yellow} R:${cell.red} DR:${cell.dark_red}`;
+                            title = `Grid [${col}, ${row}] - Y:${cell.yellow} R:${cell.red} DR:${cell.dark_red}${isTop10 ? ' - TOP 10!' : ''}`;
                           }
                         }
 
@@ -211,14 +227,23 @@ export function FullTrafficGrid({ data, rows = 21, cols = 15, mode = "traffic" }
                             key={`cell-${col}-${row}`}
                             onClick={() => handleCellClick(col, row)}
                             className={cn(
-                              "rounded-sm border transition-all duration-200",
+                              "rounded-sm border transition-all duration-200 relative",
                               "hover:scale-110 hover:z-10 hover:shadow-lg",
                               "focus:outline-none focus:ring-2 focus:ring-primary/50",
                               styles,
+                              isTop10 && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                               isHighlighted && "cursor-pointer"
                             )}
                             title={title}
-                          />
+                          >
+                            {isTop10 && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="bg-primary/90 text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-lg">
+                                  {Array.from(top10Cells).indexOf(cellKey) + 1}
+                                </div>
+                              </div>
+                            )}
+                          </button>
                         );
                       })}
                     </React.Fragment>
