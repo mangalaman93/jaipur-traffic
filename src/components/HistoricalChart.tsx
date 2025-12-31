@@ -149,7 +149,15 @@ export function HistoricalChart({
       {/* Data Summary */}
       <div className="text-xs text-muted-foreground text-center">
         {data.length > 0
-          ? `${formatRangeTime(parseISTTimestamp(data[0].ts))} - ${formatRangeTime(parseISTTimestamp(data[data.length - 1].ts))}`
+          ? (() => {
+              // Sort data by timestamp to ensure correct order for range display
+              const sortedData = [...data].sort((a, b) => {
+                const dateA = parseISTTimestamp(a.ts);
+                const dateB = parseISTTimestamp(b.ts);
+                return dateA.getTime() - dateB.getTime();
+              });
+              return `${formatRangeTime(parseISTTimestamp(sortedData[0].ts))} - ${formatRangeTime(parseISTTimestamp(sortedData[sortedData.length - 1].ts))}`;
+            })()
           : "No time range available"}
       </div>
     </div>
