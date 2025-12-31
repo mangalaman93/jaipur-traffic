@@ -9,8 +9,7 @@ export function StatsBar({ data }: StatsBarProps) {
     total: data.length,
     critical: data.filter(d => d.dark_red > 0).length,
     high: data.filter(d => d.red > 0 && d.dark_red === 0).length,
-    moderate: data.filter(d => d.yellow > 0 && d.red === 0 && d.dark_red === 0)
-      .length,
+    moderate: data.filter(d => d.yellow > 0 && d.red === 0 && d.dark_red === 0).length,
   };
 
   return (

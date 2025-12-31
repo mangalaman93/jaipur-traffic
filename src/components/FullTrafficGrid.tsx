@@ -19,9 +19,7 @@ interface FullTrafficGridProps {
   cols?: number;
 }
 
-const getSeverity = (
-  cell: TrafficData | undefined
-): "normal" | "yellow" | "red" | "darkRed" => {
+const getSeverity = (cell: TrafficData | undefined): "normal" | "yellow" | "red" | "darkRed" => {
   if (!cell) return "normal";
   if (cell.dark_red > 0) return "darkRed";
   if (cell.red > 0) return "red";
@@ -29,9 +27,7 @@ const getSeverity = (
   return "normal";
 };
 
-const getSeverityStyles = (
-  severity: "normal" | "yellow" | "red" | "darkRed"
-) => {
+const getSeverityStyles = (severity: "normal" | "yellow" | "red" | "darkRed") => {
   switch (severity) {
     case "darkRed":
       return "bg-traffic-dark-red/60 border-traffic-dark-red";
@@ -48,7 +44,6 @@ const getSeverityStyles = (
 const ROW_HEIGHT = 53.3;
 const GRID_ASPECT_RATIO = 12750 / 10920;
 
-// Helper to calculate actual row height from grid container
 const useRowHeight = (containerRef: React.RefObject<HTMLDivElement>, rows: number) => {
   const [rowHeight, setRowHeight] = useState(ROW_HEIGHT);
 
@@ -74,16 +69,9 @@ const useRowHeight = (containerRef: React.RefObject<HTMLDivElement>, rows: numbe
   return rowHeight;
 };
 
-export function FullTrafficGrid({
-  data,
-  rows = 21,
-  cols = 15,
-}: FullTrafficGridProps) {
+export function FullTrafficGrid({ data, rows = 21, cols = 15 }: FullTrafficGridProps) {
   const [selectedCell, setSelectedCell] = useState<TrafficData | null>(null);
-  const [selectedCoords, setSelectedCoords] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
+  const [selectedCoords, setSelectedCoords] = useState<{ x: number; y: number } | null>(null);
 
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   const rowHeight = useRowHeight(gridContainerRef, rows);

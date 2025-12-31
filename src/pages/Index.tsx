@@ -49,8 +49,12 @@ export default function Index() {
   // Get the maximum timestamp from current data for last updated time
   const lastUpdated =
     currentData && currentData.length > 0
-      ? parseISTTimestamp(currentData.reduce((max, d) =>
-          new Date(d.ts) > new Date(max.ts) ? d : max, currentData[0]).ts)
+      ? parseISTTimestamp(
+          currentData.reduce(
+            (max, d) => (new Date(d.ts) > new Date(max.ts) ? d : max),
+            currentData[0]
+          ).ts
+        )
       : new Date();
 
   return (
@@ -143,8 +147,7 @@ export default function Index() {
                             <div
                               className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium border ${severityColors[severity]}`}
                             >
-                              {severity.charAt(0).toUpperCase() +
-                                severity.slice(1)}
+                              {severity.charAt(0).toUpperCase() + severity.slice(1)}
                             </div>
                           </div>
 
