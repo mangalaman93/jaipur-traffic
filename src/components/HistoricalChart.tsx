@@ -32,8 +32,25 @@ export function HistoricalChart({
 }: HistoricalChartProps) {
   const [selectedMetric, setSelectedMetric] = useState<MetricType>("total");
 
-  const chartData = processChartData(data, selectedMetric);
+  const chartData = processChartData(data);
   const chartLines = getChartLines(selectedMetric);
+
+  const getTimeRange = () => {
+    if (!data.length) return "No time range available";
+
+    const sortedData = [...data].sort((a, b) => {
+      const dateA = parseISTTimestamp(a.ts);
+      const dateB = parseISTTimestamp(b.ts);
+      return dateA.getTime() - dateB.getTime();
+    });
+
+    const startTime = formatRangeTime(parseISTTimestamp(sortedData[0].ts));
+    const endTime = formatRangeTime(
+      parseISTTimestamp(sortedData[sortedData.length - 1].ts)
+    );
+
+    return `${startTime} - ${endTime}`;
+  };
 
   if (isLoading) {
     return (
@@ -57,11 +74,9 @@ export function HistoricalChart({
 
   return (
     <div className="space-y-4">
-      {/* Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* Metric Selector */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-foreground">Metric:</span>
             <select
               value={selectedMetric}
@@ -76,7 +91,6 @@ export function HistoricalChart({
             </select>
           </div>
 
-          {/* Duration Selector */}
           {onDurationChange && (
             <DurationSelector
               selectedDuration={selectedDuration}
@@ -86,23 +100,10 @@ export function HistoricalChart({
         </div>
       </div>
 
-      {/* Chart Container */}
       <div className="h-80 bg-muted/20 rounded-lg border border-border/50 p-4">
-        <ResponsiveContainer width="100%" height={320}>
-          <LineChart
-            data={chartData}
-            margin={{
-              top: 5,
-              right: 5,
-              left: 5,
-              bottom: 5,
-            }}
-          >
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="currentColor"
-              strokeOpacity={0.1}
-            />
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
             <XAxis
               dataKey="timestamp"
               stroke="currentColor"
@@ -125,10 +126,7 @@ export function HistoricalChart({
             <Legend
               verticalAlign="bottom"
               align="center"
-              wrapperStyle={{
-                fontSize: "12px",
-                paddingBottom: "5px",
-              }}
+              wrapperStyle={{ fontSize: "12px", paddingBottom: "5px" }}
             />
 
             {chartLines.map((line) => (
@@ -144,21 +142,9 @@ export function HistoricalChart({
             ))}
           </LineChart>
         </ResponsiveContainer>
-      </div>
-
-      {/* Data Summary */}
-      <div className="text-xs text-muted-foreground text-center">
-        {data.length > 0
-          ? (() => {
-              // Sort data by timestamp to ensure correct order for range display
-              const sortedData = [...data].sort((a, b) => {
-                const dateA = parseISTTimestamp(a.ts);
-                const dateB = parseISTTimestamp(b.ts);
-                return dateA.getTime() - dateB.getTime();
-              });
-              return `${formatRangeTime(parseISTTimestamp(sortedData[0].ts))} - ${formatRangeTime(parseISTTimestamp(sortedData[sortedData.length - 1].ts))}`;
-            })()
-          : "No time range available"}
+        <div className="text-xs text-muted-foreground text-center">
+          {getTimeRange()} • {data.length} data points
+        </div>
       </div>
     </div>
   );

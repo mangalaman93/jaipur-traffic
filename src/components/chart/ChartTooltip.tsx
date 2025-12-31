@@ -10,11 +10,13 @@ export function ChartTooltip({ active, payload }: ChartTooltipProps) {
   if (!active || !payload?.length) return null;
 
   const data = payload[0].payload;
+
   const metrics = [
     { label: "Yellow", value: data.yellow },
     { label: "Red", value: data.red },
     { label: "Dark Red", value: data.dark_red },
     { label: "Total", value: data.total, highlight: true },
+    { label: "Latest Severity", value: data.latest_severity.toFixed(2) },
   ];
 
   return (
@@ -26,18 +28,14 @@ export function ChartTooltip({ active, payload }: ChartTooltipProps) {
         {metrics.map(({ label, value, highlight }) => (
           <div
             key={label}
-            className={`flex justify-between gap-4 text-xs ${highlight ? "font-medium border-t border-border/50 pt-1" : ""}`}
+            className={`flex justify-between gap-4 text-xs ${
+              highlight ? "font-medium border-t border-border/50 pt-1" : ""
+            }`}
           >
             <span className="text-muted-foreground">{label}:</span>
             <span className="font-mono">{value}</span>
           </div>
         ))}
-        {data.latest_severity && (
-          <div className="flex justify-between gap-4 text-xs font-medium">
-            <span className="text-muted-foreground">Latest Severity:</span>
-            <span className="font-mono">{data.latest_severity.toFixed(2)}</span>
-          </div>
-        )}
       </div>
     </div>
   );
