@@ -36,20 +36,21 @@ export default function Index() {
     queryKey: ["congestedTraffic"],
     queryFn: async () => {
       const response = await fetch(
-        "https://traffic-worker.mangalaman93.workers.dev/congested"
+        "https://traffic-worker.mangalaman93.workers.dev/current"
       );
       if (!response.ok) {
-        throw new Error("Failed to fetch congested traffic data");
+        throw new Error("Failed to fetch current traffic data");
       }
       const data = await response.json();
       return data as TrafficData[];
     },
   });
 
-  const displayData = activeTab === "current" ? currentData : congestedData;
+  // Get the maximum timestamp from current data for last updated time
   const lastUpdated =
-    displayData && displayData.length > 0
-      ? parseISTTimestamp(displayData[0].ts)
+    currentData && currentData.length > 0
+      ? parseISTTimestamp(currentData.reduce((max, d) =>
+          new Date(d.ts) > new Date(max.ts) ? d : max, currentData[0]).ts)
       : new Date();
 
   return (
