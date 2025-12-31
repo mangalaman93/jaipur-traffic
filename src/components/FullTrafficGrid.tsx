@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
 import { parseISTTimestamp } from "@/utils/timeUtils";
@@ -7,11 +8,18 @@ import {
   getGoogleMapsUrl,
 } from "@/utils/coordinateUtils";
 import {
+  calculateSeverityLevel,
+  calculateSeverityDifferences,
+  calculateTotalTraffic,
+  getTrafficSeverityLevel,
+} from "@/utils/trafficUtils";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { HistoricalChart } from "@/components/HistoricalChart";
 
 interface FullTrafficGridProps {
   data: TrafficData[];
@@ -28,20 +36,6 @@ const getSeverity = (
   if (cell.dark_red > 0) return "darkRed";
   if (cell.red > 0) return "red";
   if (cell.yellow > 0) return "yellow";
-  return "normal";
-};
-
-const getSeverityLevel = (
-  cell: TrafficData | undefined,
-): "normal" | "moderate" | "high" => {
-  if (!cell || !cell.latest_severity || !cell.p95 || !cell.p99) return "normal";
-
-  // Handle case when all values are 0
-  if (cell.latest_severity === 0 && cell.p95 === 0 && cell.p99 === 0)
-    return "normal";
-
-  if (cell.latest_severity > cell.p99) return "high";
-  if (cell.latest_severity > cell.p95) return "moderate";
   return "normal";
 };
 
@@ -115,6 +109,37 @@ export function FullTrafficGrid({
     x: number;
     y: number;
   } | null>(null);
+  const [selectedDuration, setSelectedDuration] = useState<string>("24h");
+
+  const DURATION_OPTIONS = {
+    "1h": "1h",
+    "6h": "6h",
+    "12h": "12h",
+    "24h": "24h",
+    "7d": "7d",
+  } as const;
+
+  // Fetch historical data when a cell is selected
+  const { data: historicalData, isLoading: isHistoricalLoading } = useQuery({
+    queryKey: [
+      "historicalData",
+      selectedCoords?.x,
+      selectedCoords?.y,
+      selectedDuration,
+    ],
+    queryFn: async () => {
+      if (!selectedCoords) return [];
+
+      const url = `https://traffic-worker.mangalaman93.workers.dev/history?x=${selectedCoords.x}&y=${selectedCoords.y}&duration=${selectedDuration}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch historical data");
+      }
+      const data = await response.json();
+      return data as TrafficData[];
+    },
+    enabled: !!selectedCoords,
+  });
 
   const gridContainerRef = React.useRef<HTMLDivElement>(null);
   const rowHeight = useRowHeight(gridContainerRef, rows);
@@ -149,8 +174,7 @@ export function FullTrafficGrid({
       sortedData = [...data]
         .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
         .map((cell) => {
-          const p95Diff = cell.latest_severity! - cell.p95!;
-          const p99Diff = cell.latest_severity! - cell.p99!;
+          const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
           return { ...cell, p95Diff, p99Diff };
         });
 
@@ -175,11 +199,8 @@ export function FullTrafficGrid({
     } else {
       // For traffic mode, sort by total traffic counts
       sortedData = [...data]
-        .filter((cell) => cell.yellow + cell.red + cell.dark_red > 0)
-        .sort(
-          (a, b) =>
-            b.yellow + b.red + b.dark_red - (a.yellow + a.red + b.dark_red),
-        )
+        .filter((cell) => calculateTotalTraffic(cell) > 0)
+        .sort((a, b) => calculateTotalTraffic(b) - calculateTotalTraffic(a))
         .slice(0, 10);
     }
 
@@ -266,11 +287,15 @@ export function FullTrafficGrid({
                         let title = `Grid [${col}, ${row}]`;
 
                         if (mode === "severity") {
-                          const severityLevel = getSeverityLevel(cell);
+                          const severityLevel = calculateSeverityLevel(cell);
                           isHighlighted = severityLevel !== "normal" || isTop10;
                           styles = getSeverityLevelStyles(severityLevel);
                           if (cell) {
-                            title = `Grid [${col}, ${row}] - Severity: ${cell.latest_severity || "N/A"} (P95: ${cell.p95 || "N/A"}, P99: ${cell.p99 || "N/A"})${isTop10 ? " - TOP 10!" : ""}`;
+                            title = `Grid [${col}, ${row}] - Severity: ${
+                              cell.latest_severity || "N/A"
+                            } (P95: ${cell.p95 || "N/A"}, P99: ${
+                              cell.p99 || "N/A"
+                            })${isTop10 ? " - TOP 10!" : ""}`;
                           }
                         } else {
                           const severity = getSeverity(cell);
@@ -361,16 +386,69 @@ export function FullTrafficGrid({
         open={!!selectedCell}
         onOpenChange={(open) => !open && setSelectedCell(null)}
       >
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Traffic Grid Details</DialogTitle>
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <DialogTitle>
+                  Traffic Grid [{selectedCoords?.x}, {selectedCoords?.y}]
+                </DialogTitle>
+                <div className="text-xs text-muted-foreground font-mono">
+                  Last updated:{" "}
+                  {selectedCell?.ts
+                    ? parseISTTimestamp(selectedCell.ts).toLocaleString(
+                        "en-IN",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          second: "2-digit",
+                          timeZone: "Asia/Kolkata",
+                        },
+                      )
+                    : "N/A"}
+                </div>
+              </div>
+              {selectedCoords && (
+                <a
+                  href={getGoogleMapsUrl(
+                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y)
+                      .lat,
+                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y)
+                      .lng,
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                  </svg>
+                  View on Google Maps
+                </a>
+              )}
+            </div>
           </DialogHeader>
           {selectedCell ? (
             <div className="space-y-4">
-              <div className="text-center text-lg font-mono">
-                Grid [{selectedCoords?.x}, {selectedCoords?.y}]
-              </div>
-
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-3 rounded-lg bg-traffic-yellow/20 border border-traffic-yellow/50">
                   <div className="text-2xl font-bold text-traffic-yellow">
@@ -416,61 +494,15 @@ export function FullTrafficGrid({
                 </div>
               </div>
 
-              {/* Timestamp */}
-              <div className="text-center text-sm text-muted-foreground font-mono">
-                Last updated:{" "}
-                {parseISTTimestamp(selectedCell.ts).toLocaleString("en-IN", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  timeZone: "Asia/Kolkata",
-                })}
+              {/* Historical Chart Section */}
+              <div className="space-y-3">
+                <HistoricalChart
+                  data={historicalData || []}
+                  isLoading={isHistoricalLoading}
+                  selectedDuration={selectedDuration}
+                  onDurationChange={setSelectedDuration}
+                />
               </div>
-
-              {/* Google Maps Link */}
-              {selectedCoords && (
-                <div className="text-center">
-                  <a
-                    href={getGoogleMapsUrl(
-                      getCellCenterCoordinates(
-                        selectedCoords.x,
-                        selectedCoords.y,
-                      ).lat,
-                      getCellCenterCoordinates(
-                        selectedCoords.x,
-                        selectedCoords.y,
-                      ).lng,
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
-                  >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    View on Google Maps
-                  </a>
-                </div>
-              )}
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">

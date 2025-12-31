@@ -10,6 +10,11 @@ import {
   getCellCenterCoordinates,
   getGoogleMapsUrl,
 } from "@/utils/coordinateUtils";
+import {
+  calculateSeverityDifferences,
+  calculateTotalTraffic,
+  getTrafficSeverityLevel,
+} from "@/utils/trafficUtils";
 
 // Shared severity color constants
 const TRAFFIC_SEVERITY_COLORS = {
@@ -62,8 +67,7 @@ export default function Index() {
     const processedData = currentData
       .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
       .map((cell) => {
-        const p95Diff = cell.latest_severity! - cell.p95!;
-        const p99Diff = cell.latest_severity! - cell.p99!;
+        const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
         return {
           ...cell,
           p95Diff,
@@ -166,14 +170,8 @@ export default function Index() {
                 <div className="space-y-2">
                   {congestedData && congestedData.length > 0 ? (
                     congestedData.slice(0, 10).map((cell, index) => {
-                      const totalTraffic =
-                        cell.yellow + cell.red + cell.dark_red;
-                      const severity =
-                        cell.dark_red > 0
-                          ? "critical"
-                          : cell.red > 0
-                            ? "high"
-                            : "medium";
+                      const totalTraffic = calculateTotalTraffic(cell);
+                      const severity = getTrafficSeverityLevel(cell);
 
                       return (
                         <div
