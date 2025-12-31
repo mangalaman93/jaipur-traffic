@@ -11,7 +11,6 @@ import {
   calculateSeverityLevel,
   calculateSeverityDifferences,
   calculateTotalTraffic,
-  getTrafficSeverityLevel,
 } from "@/utils/trafficUtils";
 import { formatRangeTime } from "@/utils/timeFormat";
 import { getHoursAgo } from "@/utils/timeUtils";
@@ -30,6 +29,7 @@ interface FullTrafficGridProps {
   mode?: "traffic" | "severity";
   highlightTop10?: boolean;
   initialSelectedCell?: TrafficData | null;
+  activeTab?: string;
 }
 
 const getSeverity = (
@@ -107,6 +107,7 @@ export function FullTrafficGrid({
   mode = "traffic",
   highlightTop10 = false,
   initialSelectedCell,
+  activeTab = "traffic",
 }: FullTrafficGridProps) {
   const [selectedCell, setSelectedCell] = useState<TrafficData | null>(initialSelectedCell || null);
   const [selectedCoords, setSelectedCoords] = useState<{
@@ -483,7 +484,8 @@ export function FullTrafficGrid({
               </div>
 
               {/* Severity Information */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <div className={`grid gap-4 ${activeTab === "sustained" ? "grid-cols-2" : "grid-cols-3"}`}>
                 <div className="text-center p-3 rounded-lg bg-muted/20 border border-border/50">
                   <div className="text-2xl font-bold text-foreground">
                     {selectedCell.latest_severity?.toFixed(0) || "N/A"}
@@ -492,28 +494,104 @@ export function FullTrafficGrid({
                     Latest Severity
                   </div>
                 </div>
-                <div className="text-center p-3 rounded-lg bg-muted/20 border border-border/50">
-                  <div className="text-2xl font-bold text-muted-foreground">
-                    {selectedCell.p95?.toFixed(0) || "N/A"}
+                {activeTab === "sustained" ? (
+                  <div className="text-center p-3 rounded-lg bg-muted/20 border border-border/50">
+                    <div className="text-2xl font-bold text-muted-foreground">
+                      {selectedCell.threshold_p95?.toFixed(0) || "N/A"}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Threshold P95</div>
                   </div>
-                  <div className="text-xs text-muted-foreground">P95</div>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-muted/20 border border-border/50">
-                  <div className="text-2xl font-bold text-muted-foreground">
-                    {selectedCell.p99?.toFixed(0) || "N/A"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">P99</div>
-                </div>
+                ) : (
+                  <>
+                    <div className="text-center p-3 rounded-lg bg-muted/20 border border-border/50">
+                      <div className="text-2xl font-bold text-muted-foreground">
+                        {selectedCell.p95?.toFixed(0) || "N/A"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">P95</div>
+                    </div>
+                    <div className="text-center p-3 rounded-lg bg-muted/20 border border-border/50">
+                      <div className="text-2xl font-bold text-muted-foreground">
+                        {selectedCell.p99?.toFixed(0) || "N/A"}
+                      </div>
+                      <div className="text-xs text-muted-foreground">P99</div>
+                    </div>
+                  </>
+                )}
               </div>
+              </div>
+
+              {/* Daily Average Traffic */}
+              {historicalData && historicalData.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                    <span className="text-primary">{">"}</span>
+                    <span>Daily Average Traffic (Severity)</span>
+                  </div>
+                  <div className="space-y-1">
+                    {(() => {
+                      // Group data by day and calculate daily averages
+                      const dailyAverages = historicalData.reduce((acc, point) => {
+                        const date = new Date(point.ts).toDateString();
+                        const severity = point.yellow + 2 * point.red + 3 * point.dark_red;
+
+                        if (!acc[date]) {
+                          acc[date] = { total: 0, count: 0, date };
+                        }
+                        acc[date].total += severity;
+                        acc[date].count += 1;
+                        return acc;
+                      }, {} as Record<string, { total: number; count: number; date: string }>);
+
+                      // Convert to array and sort by date
+                      const sortedDays = Object.values(dailyAverages)
+                        .map(day => ({
+                          date: new Date(day.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          }),
+                          average: Math.round(day.total / day.count)
+                        }))
+                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+                      return (
+                        <>
+                          {/* First row: Dates */}
+                          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sortedDays.length}, minmax(0, 1fr))` }}>
+                            {sortedDays.map((day, index) => (
+                              <div key={`date-${index}`} className="text-center">
+                                <span className="text-xs font-medium text-muted-foreground">{day.date}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {/* Second row: Values */}
+                          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${sortedDays.length}, minmax(0, 1fr))` }}>
+                            {sortedDays.map((day, index) => (
+                              <div key={`value-${index}`} className="text-center p-2 rounded bg-muted/20 border border-border/50">
+                                <span className="text-sm font-bold text-foreground">{day.average}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              )}
 
               {/* Historical Chart Section */}
               <div className="space-y-3">
-                <HistoricalChart
-                  data={historicalData || []}
-                  isLoading={isHistoricalLoading}
-                  selectedDuration={selectedDuration}
-                  onDurationChange={setSelectedDuration}
-                />
+                <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
+                  <span className="text-primary">{">"}</span>
+                  <span>Historical Chart</span>
+                </div>
+                <div className="space-y-3">
+                  <HistoricalChart
+                    data={historicalData || []}
+                    isLoading={isHistoricalLoading}
+                    selectedDuration={selectedDuration}
+                    onDurationChange={setSelectedDuration}
+                  />
+                </div>
               </div>
             </div>
           ) : (

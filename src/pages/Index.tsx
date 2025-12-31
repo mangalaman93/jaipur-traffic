@@ -2,18 +2,14 @@ import { useState, lazy, Suspense, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import { TrafficAreaCard } from "@/components/TrafficAreaCard";
 import { TrafficData } from "@/types/traffic";
 import Activity from "lucide-react/dist/esm/icons/activity";
 import BarChart3 from "lucide-react/dist/esm/icons/bar-chart-3";
+import Clock from "lucide-react/dist/esm/icons/clock";
 import { parseISTTimestamp } from "@/utils/timeUtils";
 import {
-  getCellCenterCoordinates,
-  getGoogleMapsUrl,
-} from "@/utils/coordinateUtils";
-import {
   calculateSeverityDifferences,
-  calculateTotalTraffic,
-  getTrafficSeverityLevel,
 } from "@/utils/trafficUtils";
 
 // Shared severity color constants
@@ -60,6 +56,20 @@ export default function Index() {
 
   // Use the same data for congested areas (no duplicate API call)
   const congestedData = currentData;
+
+  const { data: sustainedData } = useQuery({
+    queryKey: ["sustainedTraffic"],
+    queryFn: async () => {
+      const response = await fetch(
+        "https://traffic-worker.mangalaman93.workers.dev/sustained",
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch sustained traffic data");
+      }
+      const data = await response.json();
+      return data as TrafficData[];
+    },
+  });
 
   // Calculate Top 10 severity areas based on P99-first, P95-fallback logic
   const topSeverityAreas = useMemo(() => {
@@ -119,7 +129,7 @@ export default function Index() {
 
       <main className="container py-2 space-y-3">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="traffic" className="gap-2">
               <Activity className="w-4 h-4" />
               Traffic Analysis
@@ -127,6 +137,10 @@ export default function Index() {
             <TabsTrigger value="severity" className="gap-2">
               <BarChart3 className="w-4 h-4" />
               Severity Analysis
+            </TabsTrigger>
+            <TabsTrigger value="sustained" className="gap-2">
+              <Clock className="w-4 h-4" />
+              Sustained Traffic
             </TabsTrigger>
           </TabsList>
 
@@ -152,6 +166,7 @@ export default function Index() {
                   cols={15}
                   highlightTop10={true}
                   initialSelectedCell={selectedCell}
+                  activeTab={activeTab}
                 />
               </Suspense>
 
@@ -171,161 +186,15 @@ export default function Index() {
                 {/* Congested Areas List */}
                 <div className="space-y-2">
                   {congestedData && congestedData.length > 0 ? (
-                    congestedData.slice(0, 10).map((cell, index) => {
-                      const totalTraffic = calculateTotalTraffic(cell);
-                      const severity = getTrafficSeverityLevel(cell);
-
-                      return (
-                        <div
-                          key={`${cell.x}-${cell.y}`}
-                          className="bg-card border border-border rounded-lg p-3 sm:p-4"
-                        >
-                          {/* Mobile: Stack vertically, Desktop: Side by side */}
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            {/* Left section: Rank, Grid Info, Severity */}
-                            <div className="flex items-center gap-3">
-                              {/* Rank */}
-                              <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                                {index + 1}
-                              </div>
-
-                              {/* Grid Info */}
-                              <div className="min-w-0">
-                                <div className="font-mono text-sm font-bold">
-                                  Grid [{cell.x}, {cell.y}]
-                                </div>
-                                <div className="flex gap-2 mt-1">
-                                  <span className="text-xs text-muted-foreground">
-                                    Severity:{" "}
-                                    <span className="font-bold">
-                                      {cell.latest_severity?.toFixed(0) ||
-                                        "N/A"}
-                                    </span>
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    P95:{" "}
-                                    <span className="font-bold">
-                                      {cell.p95?.toFixed(0) || "N/A"}
-                                    </span>
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    P99:{" "}
-                                    <span className="font-bold">
-                                      {cell.p99?.toFixed(0) || "N/A"}
-                                    </span>
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Severity Badge */}
-                              <div
-                                className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium border ${TRAFFIC_SEVERITY_COLORS[severity]}`}
-                              >
-                                {severity.charAt(0).toUpperCase() +
-                                  severity.slice(1)}
-                              </div>
-                            </div>
-
-                            {/* Traffic Counts and Severity Values - Full width on mobile */}
-                            <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-2 pl-11 sm:pl-0">
-                              <div className="text-center">
-                                <div className="text-base sm:text-lg font-bold text-traffic-yellow">
-                                  {cell.yellow}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Yellow
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-base sm:text-lg font-bold text-traffic-red">
-                                  {cell.red}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Red
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-base sm:text-lg font-bold text-traffic-dark-red">
-                                  {cell.dark_red}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Dark Red
-                                </div>
-                              </div>
-
-                              {/* Google Maps Link - inline on mobile */}
-                              <a
-                                href={getGoogleMapsUrl(
-                                  getCellCenterCoordinates(cell.x, cell.y).lat,
-                                  getCellCenterCoordinates(cell.x, cell.y).lng,
-                                )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="
-                                  flex-shrink-0 inline-flex items-center justify-center
-                                  w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1
-                                  bg-primary text-primary-foreground rounded-full sm:rounded
-                                  hover:bg-primary/90 transition-colors text-xs font-medium
-                                "
-                                title="View on Google Maps"
-                              >
-                                <svg
-                                  className="w-4 h-4 sm:w-3 sm:h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                                <span className="hidden sm:inline sm:ml-2">
-                                  View on Maps
-                                </span>
-                              </a>
-
-                              {/* Details Button */}
-                              <button
-                                className="
-                                  flex-shrink-0 inline-flex items-center justify-center
-                                  w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1
-                                  bg-secondary text-secondary-foreground rounded-full sm:rounded
-                                  hover:bg-secondary/80 transition-colors text-xs font-medium
-                                "
-                                title="View Details"
-                                onClick={() => setSelectedCell(cell)}
-                              >
-                                <svg
-                                  className="w-4 h-4 sm:w-3 sm:h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                                <span className="hidden sm:inline sm:ml-2">
-                                  Details
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
+                    congestedData.slice(0, 10).map((cell, index) => (
+                      <TrafficAreaCard
+                        key={`${cell.x}-${cell.y}`}
+                        cell={cell}
+                        index={index}
+                        severityColors={TRAFFIC_SEVERITY_COLORS}
+                        onDetailsClick={setSelectedCell}
+                      />
+                    ))
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No congested areas data available</p>
@@ -359,6 +228,7 @@ export default function Index() {
                   mode="severity"
                   highlightTop10={true}
                   initialSelectedCell={selectedCell}
+                  activeTab={activeTab}
                 />
               </Suspense>
 
@@ -378,159 +248,80 @@ export default function Index() {
                 {/* Severity Areas List */}
                 <div className="space-y-2">
                   {topSeverityAreas && topSeverityAreas.length > 0 ? (
-                    topSeverityAreas.map((area, index) => {
-                      return (
-                        <div
-                          key={`${area.x}-${area.y}`}
-                          className="bg-card border border-border rounded-lg p-3 sm:p-4"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                            {/* Left section: Rank, Grid Info, Severity */}
-                            <div className="flex items-center gap-3">
-                              {/* Rank */}
-                              <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                                {index + 1}
-                              </div>
-
-                              {/* Grid Info */}
-                              <div className="min-w-0">
-                                <div className="font-mono text-sm font-bold">
-                                  Grid [{area.x}, {area.y}]
-                                </div>
-                                <div className="flex gap-2 mt-1">
-                                  <span className="text-xs text-muted-foreground">
-                                    Severity:{" "}
-                                    <span className="font-bold">
-                                      {area.latest_severity?.toFixed(0)}
-                                    </span>
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    P95:{" "}
-                                    <span className="font-bold">
-                                      {area.p95?.toFixed(0) || "N/A"}
-                                    </span>
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    P99:{" "}
-                                    <span className="font-bold">
-                                      {area.p99?.toFixed(0) || "N/A"}
-                                    </span>
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Severity Badge */}
-                              <div
-                                className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-medium border ${SEVERITY_LEVEL_COLORS[area.severityLevel as keyof typeof SEVERITY_LEVEL_COLORS]}`}
-                              >
-                                {area.severityLevel.charAt(0).toUpperCase() +
-                                  area.severityLevel.slice(1)}
-                              </div>
-                            </div>
-
-                            {/* Traffic Counts - Full width on mobile */}
-                            <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-3 pl-11 sm:pl-0">
-                              <div className="text-center">
-                                <div className="text-base sm:text-lg font-bold text-traffic-yellow">
-                                  {area.yellow}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Yellow
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-base sm:text-lg font-bold text-traffic-red">
-                                  {area.red}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Red
-                                </div>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-base sm:text-lg font-bold text-traffic-dark-red">
-                                  {area.dark_red}
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Dark Red
-                                </div>
-                              </div>
-
-                              {/* Google Maps Link */}
-                              <a
-                                href={getGoogleMapsUrl(
-                                  getCellCenterCoordinates(area.x, area.y).lat,
-                                  getCellCenterCoordinates(area.x, area.y).lng,
-                                )}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="
-                                  flex-shrink-0 inline-flex items-center justify-center
-                                  w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1
-                                  bg-primary text-primary-foreground rounded-full sm:rounded
-                                  hover:bg-primary/90 transition-colors text-xs font-medium
-                                "
-                                title="View on Google Maps"
-                              >
-                                <svg
-                                  className="w-4 h-4 sm:w-3 sm:h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                                  />
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                                  />
-                                </svg>
-                                <span className="hidden sm:inline sm:ml-2">
-                                  View on Maps
-                                </span>
-                              </a>
-
-                              {/* Details Button */}
-                              <button
-                                className="
-                                  flex-shrink-0 inline-flex items-center justify-center
-                                  w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1
-                                  bg-secondary text-secondary-foreground rounded-full sm:rounded
-                                  hover:bg-secondary/80 transition-colors text-xs font-medium
-                                "
-                                title="View Details"
-                                onClick={() => setSelectedCell(area)}
-                              >
-                                <svg
-                                  className="w-4 h-4 sm:w-3 sm:h-3"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                  />
-                                </svg>
-                                <span className="hidden sm:inline sm:ml-2">
-                                  Details
-                                </span>
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
+                    topSeverityAreas.map((area, index) => (
+                      <TrafficAreaCard
+                        key={`${area.x}-${area.y}`}
+                        cell={area}
+                        index={index}
+                        severityLevelColors={SEVERITY_LEVEL_COLORS}
+                        onDetailsClick={setSelectedCell}
+                      />
+                    ))
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p>No severity anomalies data available</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="sustained">
+            <div className="space-y-3">
+              <Suspense
+                fallback={
+                  <div className="h-12 bg-muted/20 animate-pulse rounded-lg" />
+                }
+              >
+                <div className="mt-3">
+                  <StatsBar data={sustainedData || []} />
+                </div>
+              </Suspense>
+              <Suspense
+                fallback={
+                  <div className="aspect-[15/21] bg-muted/20 animate-pulse rounded-lg" />
+                }
+              >
+                <FullTrafficGrid
+                  data={sustainedData || []}
+                  rows={21}
+                  cols={15}
+                  highlightTop10={true}
+                  initialSelectedCell={selectedCell}
+                  activeTab={activeTab}
+                />
+              </Suspense>
+
+              {/* Sustained Traffic Areas Section */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">
+                      Sustained Traffic Areas
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Areas with persistent high traffic levels
+                    </p>
+                  </div>
+                </div>
+
+                {/* Sustained Areas List */}
+                <div className="space-y-2">
+                  {sustainedData && sustainedData.length > 0 ? (
+                    sustainedData.slice(0, 10).map((cell, index) => (
+                      <TrafficAreaCard
+                        key={`${cell.x}-${cell.y}`}
+                        cell={cell}
+                        index={index}
+                        showThresholdP95={true}
+                        severityColors={TRAFFIC_SEVERITY_COLORS}
+                        onDetailsClick={setSelectedCell}
+                      />
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <p>No sustained traffic data available</p>
                     </div>
                   )}
                 </div>
