@@ -25,7 +25,6 @@ import { TrafficLegend } from "@/components/TrafficLegend";
 import { DailyAverageTraffic } from "@/components/DailyAverageTraffic";
 import { SeverityInfo } from "@/components/SeverityInfo";
 import {
-  DURATION_OPTIONS,
   GRID_DIMENSIONS,
   API_ENDPOINTS,
 } from "@/constants/traffic";
@@ -141,7 +140,7 @@ export function FullTrafficGrid({
   );
 
   // Memoize Top 10 areas for highlighting based on mode
-  const top10Cells = useMemo(() => {
+  const top10Cells = useMemo((): Set<string> => {
     if (!highlightTop10) return new Set<string>();
 
     let sortedData;
@@ -198,7 +197,11 @@ export function FullTrafficGrid({
             {/* Row labels column */}
             <div className="flex flex-col">
               <div
-                className="w-8 border border-border rounded-tl-lg flex items-center justify-center text-xs font-mono text-muted-foreground"
+                className={cn(
+                  "w-8 border border-border rounded-tl-lg",
+                  "flex items-center justify-center",
+                  "text-xs font-mono text-muted-foreground"
+                )}
                 style={{ height: rowHeight }}
               />
               {/* Empty corner - top-left rounded */}
@@ -206,9 +209,10 @@ export function FullTrafficGrid({
                 <div
                   key={`row-label-${row}`}
                   className={cn(
-                    "flex items-center justify-center text-xs font-mono text-muted-foreground w-8 h-12 border-l border-b border-border",
-                    row === rows - 1 &&
-                      "border-l border-b border-r rounded-bl-lg",
+                    "flex items-center justify-center",
+                    "text-xs font-mono text-muted-foreground",
+                    "w-8 h-12 border-l border-b border-border",
+                    row === rows - 1 && "border-l border-b border-r rounded-bl-lg",
                   )}
                   style={{ height: rowHeight }}
                 >
@@ -227,7 +231,11 @@ export function FullTrafficGrid({
                   {Array.from({ length: cols }, (_, col) => (
                     <div
                       key={`header-${col}`}
-                      className="flex items-center justify-center text-xs font-mono text-muted-foreground px-1 border border-border"
+                      className={cn(
+                        "flex items-center justify-center",
+                        "text-xs font-mono text-muted-foreground",
+                        "px-1 border border-border"
+                      )}
                       style={{ height: rowHeight }}
                     >
                       {col}
@@ -239,7 +247,11 @@ export function FullTrafficGrid({
               {/* Grid with background image and proper aspect ratio */}
               <div
                 ref={gridContainerRef}
-                className="relative bg-cover bg-center bg-no-repeat rounded-br-lg overflow-hidden border border-border border-t-0"
+                className={cn(
+                  "relative bg-cover bg-center bg-no-repeat",
+                  "rounded-br-lg overflow-hidden",
+                  "border border-border border-t-0"
+                )}
                 style={{
                   backgroundImage: "url(/data/jaipur.jpg)",
                   ...gridStyles.aspectRatio,
@@ -255,7 +267,7 @@ export function FullTrafficGrid({
                         const cell = dataMap.get(`${col}-${row}`);
                         const cellKey = `${col}-${row}`;
                         const isTop10 = highlightTop10 && top10Cells.has(cellKey);
-                        
+
                         return (
                           <GridCell
                             key={cellKey}
@@ -304,7 +316,8 @@ export function FullTrafficGrid({
                 <div className="text-xs text-muted-foreground font-mono">
                   Last updated:{" "}
                   {selectedCell?.ts
-                    ? `${formatRangeTime(parseISTTimestamp(selectedCell.ts))} (${getHoursAgo(parseISTTimestamp(selectedCell.ts))})`
+                    ? `${formatRangeTime(parseISTTimestamp(selectedCell.ts))}
+                       (${getHoursAgo(parseISTTimestamp(selectedCell.ts))})`
                     : "N/A"}
                 </div>
               </div>
@@ -408,7 +421,12 @@ export function FullTrafficGrid({
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
-              <div className="w-24 h-24 mx-auto mb-4 rounded-lg bg-muted/30 border border-border/50 flex items-center justify-center">
+              <div className={cn(
+                "w-24 h-24 mx-auto mb-4",
+                "rounded-lg bg-muted/30",
+                "border border-border/50",
+                "flex items-center justify-center"
+              )}>
                 <span className="text-2xl font-bold">0</span>
               </div>
               <p>No unusual traffic detected in this grid</p>

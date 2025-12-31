@@ -1,9 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
-import {
-  calculateSeverityLevel,
-} from "@/utils/trafficUtils";
+import { calculateSeverityLevel } from "@/utils/trafficUtils";
 
 interface GridCellProps {
   cell: TrafficData | undefined;
@@ -61,7 +59,7 @@ export function GridCell({
   onCellClick,
 }: GridCellProps) {
   const cellKey = `${col}-${row}`;
-  
+
   let isHighlighted = false;
   let styles = "";
   let title = `Grid [${col}, ${row}]`;
@@ -102,7 +100,14 @@ export function GridCell({
     >
       {isTop10 && (
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="bg-primary/90 text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold shadow-lg">
+          <div
+            className={cn(
+              "bg-primary/90 text-primary-foreground",
+              "rounded-full w-5 h-5",
+              "flex items-center justify-center",
+              "text-xs font-bold shadow-lg"
+            )}
+          >
             {Array.from(top10Cells).indexOf(cellKey) + 1}
           </div>
         </div>

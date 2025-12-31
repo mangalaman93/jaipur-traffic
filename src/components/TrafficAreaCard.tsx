@@ -15,7 +15,7 @@ interface TrafficAreaCardProps {
   showThresholdP95?: boolean;
   severityColors?: Record<string, string>;
   severityLevelColors?: Record<string, string>;
-  onDetailsClick?: (cell: TrafficData) => void;
+  onDetailsClick?: () => void;
 }
 
 export function TrafficAreaCard({
@@ -26,7 +26,6 @@ export function TrafficAreaCard({
   severityLevelColors,
   onDetailsClick,
 }: TrafficAreaCardProps) {
-  const totalTraffic = calculateTotalTraffic(cell);
   const severity = getTrafficSeverityLevel(cell);
 
   return (
@@ -161,7 +160,7 @@ export function TrafficAreaCard({
               hover:bg-secondary/80 transition-colors text-xs font-medium
             "
             title="View Details"
-            onClick={() => onDetailsClick?.(cell)}
+            onClick={() => onDetailsClick?.()}
           >
             <svg
               className="w-4 h-4 sm:w-3 sm:h-3"
