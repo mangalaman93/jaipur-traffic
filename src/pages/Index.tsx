@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TrafficAreaCard } from "@/components/TrafficAreaCard";
 import { TrafficData } from "@/lib/types";
+import { validateTrafficData } from "@/lib/validation";
 import { Activity, BarChart3, Clock } from "lucide-react";
 import { parseISTTimestamp } from "@/lib/timeUtils";
 import { calculateSeverityDifferences, calculateTotalTraffic } from "@/lib/trafficUtils";
@@ -195,7 +196,7 @@ export default function Index() {
         throw new Error("Failed to fetch current traffic data");
       }
       const data = await response.json();
-      return data as TrafficData[];
+      return validateTrafficData(data) as TrafficData[];
     },
   });
 
@@ -207,7 +208,7 @@ export default function Index() {
         throw new Error("Failed to fetch sustained traffic data");
       }
       const data = await response.json();
-      return data as TrafficData[];
+      return validateTrafficData(data) as TrafficData[];
     },
   });
 
