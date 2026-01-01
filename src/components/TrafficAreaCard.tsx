@@ -1,14 +1,8 @@
 import React from "react";
-import { TrafficData } from "@/types/traffic";
-import { cn } from "@/lib/utils";
-import {
-  getCellCenterCoordinates,
-  getGoogleMapsUrl,
-} from "@/utils/coordinateUtils";
-import {
-  calculateTotalTraffic,
-  getTrafficSeverityLevel,
-} from "@/utils/trafficUtils";
+import { TrafficData } from "@/lib/types";
+import { cn } from "@/lib/cn";
+import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/lib/coordinateUtils";
+import { calculateTotalTraffic, getTrafficSeverityLevel } from "@/lib/trafficUtils";
 
 interface TrafficAreaCardProps {
   cell: TrafficData & { severityLevel?: string };
@@ -39,7 +33,7 @@ export function TrafficAreaCard({
             className={cn(
               "flex-shrink-0 flex items-center justify-center",
               "w-8 h-8 rounded-full bg-primary/10",
-              "text-primary font-bold text-sm",
+              "text-primary font-bold text-sm"
             )}
           >
             {index + 1}
@@ -53,30 +47,20 @@ export function TrafficAreaCard({
             <div className="flex gap-2 mt-1">
               <span className="text-xs text-muted-foreground">
                 Severity:{" "}
-                <span className="font-bold">
-                  {cell.latest_severity?.toFixed(0) || "N/A"}
-                </span>
+                <span className="font-bold">{cell.latest_severity?.toFixed(0) || "N/A"}</span>
               </span>
               {showThresholdP95 ? (
                 <span className="text-xs text-muted-foreground">
                   Threshold P95:{" "}
-                  <span className="font-bold">
-                    {cell.threshold_p95?.toFixed(0) || "N/A"}
-                  </span>
+                  <span className="font-bold">{cell.threshold_p95?.toFixed(0) || "N/A"}</span>
                 </span>
               ) : (
                 <>
                   <span className="text-xs text-muted-foreground">
-                    P95:{" "}
-                    <span className="font-bold">
-                      {cell.p95?.toFixed(0) || "N/A"}
-                    </span>
+                    P95: <span className="font-bold">{cell.p95?.toFixed(0) || "N/A"}</span>
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    P99:{" "}
-                    <span className="font-bold">
-                      {cell.p99?.toFixed(0) || "N/A"}
-                    </span>
+                    P99: <span className="font-bold">{cell.p99?.toFixed(0) || "N/A"}</span>
                   </span>
                 </>
               )}
@@ -94,24 +78,24 @@ export function TrafficAreaCard({
             }`}
           >
             {severityLevelColors && cell.severityLevel
-              ? cell.severityLevel.charAt(0).toUpperCase() +
-                cell.severityLevel.slice(1)
+              ? cell.severityLevel.charAt(0).toUpperCase() + cell.severityLevel.slice(1)
               : severity.charAt(0).toUpperCase() + severity.slice(1)}
           </div>
         </div>
 
         {/* Traffic Counts and Actions - Full width on mobile */}
-        <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-2 pl-11 sm:pl-0">
+        <div
+          className={cn(
+            "flex items-center justify-between",
+            "sm:justify-end gap-3 sm:gap-2 pl-11 sm:pl-0"
+          )}
+        >
           <div className="text-center">
-            <div className="text-base sm:text-lg font-bold text-traffic-yellow">
-              {cell.yellow}
-            </div>
+            <div className="text-base sm:text-lg font-bold text-traffic-yellow">{cell.yellow}</div>
             <div className="text-xs text-muted-foreground">Yellow</div>
           </div>
           <div className="text-center">
-            <div className="text-base sm:text-lg font-bold text-traffic-red">
-              {cell.red}
-            </div>
+            <div className="text-base sm:text-lg font-bold text-traffic-red">{cell.red}</div>
             <div className="text-xs text-muted-foreground">Red</div>
           </div>
           <div className="text-center">
@@ -125,7 +109,7 @@ export function TrafficAreaCard({
           <a
             href={getGoogleMapsUrl(
               getCellCenterCoordinates(cell.x, cell.y).lat,
-              getCellCenterCoordinates(cell.x, cell.y).lng,
+              getCellCenterCoordinates(cell.x, cell.y).lng
             )}
             target="_blank"
             rel="noopener noreferrer"
@@ -133,7 +117,7 @@ export function TrafficAreaCard({
               "flex-shrink-0 inline-flex items-center justify-center",
               "w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1",
               "bg-primary text-primary-foreground rounded-full sm:rounded",
-              "hover:bg-primary/90 transition-colors text-xs font-medium",
+              "hover:bg-primary/90 transition-colors text-xs font-medium"
             )}
             title="View on Google Maps"
           >
@@ -165,7 +149,7 @@ export function TrafficAreaCard({
               "flex-shrink-0 inline-flex items-center justify-center",
               "w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-1",
               "bg-secondary text-secondary-foreground rounded-full sm:rounded",
-              "hover:bg-secondary/80 transition-colors text-xs font-medium",
+              "hover:bg-secondary/80 transition-colors text-xs font-medium"
             )}
             title="View Details"
             onClick={() => onDetailsClick?.()}

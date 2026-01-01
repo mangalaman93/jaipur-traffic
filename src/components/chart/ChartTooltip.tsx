@@ -1,5 +1,5 @@
 import { TooltipPayload } from "./ChartConfig";
-import { formatDetailedTime } from "@/utils/timeFormat";
+import { formatDetailedTime } from "@/lib/timeFormat";
 
 interface ChartTooltipProps {
   active?: boolean;

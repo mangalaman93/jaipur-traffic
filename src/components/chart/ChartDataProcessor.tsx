@@ -1,6 +1,6 @@
-import { TrafficData } from "@/types/traffic";
-import { parseISTTimestamp } from "@/utils/timeUtils";
-import { calculateTotalTraffic } from "@/utils/trafficUtils";
+import { TrafficData } from "@/lib/types";
+import { parseISTTimestamp } from "@/lib/timeUtils";
+import { calculateTotalTraffic } from "@/lib/trafficUtils";
 import { MetricType, CHART_COLORS } from "./ChartConfig";
 
 export function processChartData(data: TrafficData[]) {
@@ -10,7 +10,7 @@ export function processChartData(data: TrafficData[]) {
     return dateA.getTime() - dateB.getTime();
   });
 
-  return sortedData.map((point) => {
+  return sortedData.map(point => {
     const timestamp = parseISTTimestamp(point.ts);
     const total = calculateTotalTraffic(point);
 
@@ -20,9 +20,7 @@ export function processChartData(data: TrafficData[]) {
       red: point.red,
       dark_red: point.dark_red,
       total,
-      latest_severity:
-        point.latest_severity ??
-        point.yellow + 2 * point.red + 3 * point.dark_red,
+      latest_severity: point.latest_severity ?? point.yellow + 2 * point.red + 3 * point.dark_red,
     };
   });
 }
@@ -44,7 +42,7 @@ export function getChartLines(selectedMetric: MetricType) {
     return allLines;
   }
 
-  const line = allLines.find((l) => l.dataKey === selectedMetric);
+  const line = allLines.find(l => l.dataKey === selectedMetric);
   return [
     line || {
       dataKey: selectedMetric,

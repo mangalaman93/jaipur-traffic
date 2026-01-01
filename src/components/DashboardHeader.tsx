@@ -1,16 +1,11 @@
 import Activity from "lucide-react/dist/esm/icons/activity";
-import { cn } from "@/lib/utils";
-import { formatDetailedTime } from "@/utils/timeFormat";
-import { getHoursAgo } from "@/utils/timeUtils";
-import { GOOGLE_MAPS_URL } from "@/constants/traffic";
+import { cn } from "@/lib/cn";
+import { formatDetailedTime } from "@/lib/timeFormat";
+import { getHoursAgo } from "@/lib/timeUtils";
+import { GOOGLE_MAPS_URL } from "@/lib/constants";
 
 const MapIcon = () => (
-  <svg
-    className="w-3 h-3"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
+  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -41,9 +36,7 @@ export function DashboardHeader({ lastUpdated }: DashboardHeaderProps) {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-foreground">
-                  Jaipur Traffic Monitor
-                </h1>
+                <h1 className="text-lg font-semibold text-foreground">Jaipur Traffic Monitor</h1>
                 <a
                   href={GOOGLE_MAPS_URL}
                   target="_blank"
@@ -51,16 +44,14 @@ export function DashboardHeader({ lastUpdated }: DashboardHeaderProps) {
                   className={cn(
                     "inline-flex items-center gap-1 px-2 py-1 text-xs",
                     "bg-primary/10 text-primary rounded-md",
-                    "hover:bg-primary/20 transition-colors",
+                    "hover:bg-primary/20 transition-colors"
                   )}
                 >
                   <MapIcon />
                   Grid Mapping
                 </a>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Real-time grid analysis
-              </p>
+              <p className="text-xs text-muted-foreground">Real-time grid analysis</p>
             </div>
           </div>
 
@@ -69,9 +60,7 @@ export function DashboardHeader({ lastUpdated }: DashboardHeaderProps) {
               <div className="text-xs text-muted-foreground font-mono">
                 Last Updated: {formatDetailedTime(lastUpdated)}
               </div>
-              <div className="text-xs text-primary font-medium">
-                {getHoursAgo(lastUpdated)}
-              </div>
+              <div className="text-xs text-primary font-medium">{getHoursAgo(lastUpdated)}</div>
             </div>
           )}
         </div>

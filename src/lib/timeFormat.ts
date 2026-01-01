@@ -1,6 +1,4 @@
-/**
- * Consistent time formatting utilities for the entire application
- */
+import { TIMEZONE } from "./constants";
 
 export type TimeFormatOptions = {
   includeSeconds?: boolean;
@@ -10,31 +8,28 @@ export type TimeFormatOptions = {
 };
 
 /**
- * Standard time format used throughout the application
+ * Detailed time format with full information
  * Format: "DD-MMM-YYYY HH:MM:SS IST" (e.g., "31-Dec-2025 21:41:30 IST")
  */
-export function formatStandardTime(
-  date: Date,
-  options: TimeFormatOptions = {},
-): string {
-  const {
-    includeSeconds = true,
-    includeTimeZone = true,
-    use12Hour = false,
-    compact = false,
-  } = options;
+export function formatDetailedTime(date: Date): string {
+  const options: TimeFormatOptions = {
+    includeSeconds: true,
+    includeTimeZone: true,
+    use12Hour: false,
+    compact: false,
+  };
 
   const formatOptions: Intl.DateTimeFormatOptions = {
-    day: compact ? "2-digit" : "numeric",
+    day: options.compact ? "2-digit" : "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    hour12: use12Hour,
-    timeZone: "Asia/Kolkata",
+    hour12: options.use12Hour,
+    timeZone: TIMEZONE,
   };
 
-  if (includeSeconds) {
+  if (options.includeSeconds) {
     formatOptions.second = "2-digit";
   }
 
@@ -44,7 +39,7 @@ export function formatStandardTime(
   formatted = formatted.replace(/\//g, "-");
 
   // Add timezone if requested and not already included
-  if (includeTimeZone && !formatted.includes("IST")) {
+  if (options.includeTimeZone && !formatted.includes("IST")) {
     formatted += " IST";
   }
 
@@ -52,37 +47,42 @@ export function formatStandardTime(
 }
 
 /**
- * Compact time format for UI elements with limited space
- * Format: "DD-MMM-YYYY HH:MM" (e.g., "31-Dec-2025 21:41")
- */
-export function formatCompactTime(date: Date): string {
-  return formatStandardTime(date, {
-    includeSeconds: false,
-    includeTimeZone: false,
-    compact: true,
-  });
-}
-
-/**
- * Time format for tooltips and detailed views
- * Format: "DD-MMM-YYYY HH:MM:SS IST" (full format)
- */
-export function formatDetailedTime(date: Date): string {
-  return formatStandardTime(date, {
-    includeSeconds: true,
-    includeTimeZone: true,
-  });
-}
-
-/**
  * Time format for data ranges and summaries
  * Format: "DD-MMM-YYYY HH:MM" (consistent, no timezone)
  */
 export function formatRangeTime(date: Date): string {
-  return formatStandardTime(date, {
+  const options: TimeFormatOptions = {
     includeSeconds: false,
     includeTimeZone: false,
-  });
+    use12Hour: false,
+    compact: false,
+  };
+
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    day: options.compact ? "2-digit" : "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: options.use12Hour,
+    timeZone: TIMEZONE,
+  };
+
+  if (options.includeSeconds) {
+    formatOptions.second = "2-digit";
+  }
+
+  let formatted = date.toLocaleString("en-IN", formatOptions);
+
+  // Replace slashes with dashes for consistency
+  formatted = formatted.replace(/\//g, "-");
+
+  // Add timezone if requested and not already included
+  if (options.includeTimeZone && !formatted.includes("IST")) {
+    formatted += " IST";
+  }
+
+  return formatted;
 }
 
 /**

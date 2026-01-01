@@ -1,7 +1,7 @@
 import React from "react";
-import { cn } from "@/lib/utils";
-import { TrafficData } from "@/types/traffic";
-import { calculateSeverityLevel } from "@/utils/trafficUtils";
+import { cn } from "@/lib/cn";
+import { TrafficData } from "@/lib/types";
+import { calculateSeverityLevel } from "@/lib/trafficUtils";
 
 interface GridCellProps {
   cell: TrafficData | undefined;
@@ -13,9 +13,10 @@ interface GridCellProps {
   onCellClick: (col: number, row: number) => void;
 }
 
-const getSeverity = (
-  cell: TrafficData | undefined,
-): "normal" | "yellow" | "red" | "darkRed" => {
+type SeverityLevel = "normal" | "yellow" | "red" | "darkRed";
+type SeverityMode = "normal" | "moderate" | "high";
+
+const getSeverity = (cell: TrafficData | undefined): SeverityLevel => {
   if (!cell) return "normal";
   if (cell.dark_red > 0) return "darkRed";
   if (cell.red > 0) return "red";
@@ -23,9 +24,7 @@ const getSeverity = (
   return "normal";
 };
 
-const getSeverityStyles = (
-  severity: "normal" | "yellow" | "red" | "darkRed",
-) => {
+const getSeverityStyles = (severity: SeverityLevel) => {
   switch (severity) {
     case "darkRed":
       return "bg-traffic-dark-red/60 border-traffic-dark-red";
@@ -38,7 +37,7 @@ const getSeverityStyles = (
   }
 };
 
-const getSeverityLevelStyles = (level: "normal" | "moderate" | "high") => {
+const getSeverityLevelStyles = (level: SeverityMode) => {
   switch (level) {
     case "high":
       return "bg-red-600/50 border-red-600";
@@ -65,15 +64,13 @@ export function GridCell({
   let title = `Grid [${col}, ${row}]`;
 
   if (mode === "severity") {
-    const severityLevel = calculateSeverityLevel(cell);
+    const severityLevel = cell ? calculateSeverityLevel(cell) : "normal";
     isHighlighted = severityLevel !== "normal" || isTop10;
     styles = getSeverityLevelStyles(severityLevel);
     if (cell) {
       title = `Grid [${col}, ${row}] - Severity: ${
         cell.latest_severity || "N/A"
-      } (P95: ${cell.p95 || "N/A"}, P99: ${
-        cell.p99 || "N/A"
-      })${isTop10 ? " - TOP 10!" : ""}`;
+      } (P95: ${cell.p95 || "N/A"}, P99: ${cell.p99 || "N/A"})${isTop10 ? " - TOP 10!" : ""}`;
     }
   } else {
     const severity = getSeverity(cell);
@@ -96,7 +93,7 @@ export function GridCell({
         "focus:outline-none focus:ring-2 focus:ring-primary/50",
         styles,
         isTop10 && "ring-2 ring-primary ring-offset-1 ring-offset-background",
-        isHighlighted && "cursor-pointer",
+        isHighlighted && "cursor-pointer"
       )}
       title={title}
     >
@@ -107,7 +104,7 @@ export function GridCell({
               "bg-primary/90 text-primary-foreground",
               "rounded-full w-5 h-5",
               "flex items-center justify-center",
-              "text-xs font-bold shadow-lg",
+              "text-xs font-bold shadow-lg"
             )}
           >
             {Array.from(top10Cells).indexOf(cellKey) + 1}
