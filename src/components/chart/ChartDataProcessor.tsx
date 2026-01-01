@@ -21,7 +21,8 @@ export function processChartData(data: TrafficData[]) {
       dark_red: point.dark_red,
       total,
       latest_severity:
-        point.latest_severity ?? point.yellow + 2 * point.red + 3 * point.dark_red,
+        point.latest_severity ??
+        point.yellow + 2 * point.red + 3 * point.dark_red,
     };
   });
 }

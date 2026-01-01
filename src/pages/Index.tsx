@@ -4,9 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TrafficAreaCard } from "@/components/TrafficAreaCard";
 import { TrafficData } from "@/types/traffic";
-import Activity from "lucide-react/dist/esm/icons/activity";
-import BarChart3 from "lucide-react/dist/esm/icons/bar-chart-3";
-import Clock from "lucide-react/dist/esm/icons/clock";
+import { Activity, BarChart3, Clock } from "lucide-react";
 import { parseISTTimestamp } from "@/utils/timeUtils";
 import { calculateSeverityDifferences } from "@/utils/trafficUtils";
 import {
@@ -20,6 +18,7 @@ const FullTrafficGrid = lazy(() =>
     default: m.FullTrafficGrid,
   })),
 );
+
 const StatsBar = lazy(() =>
   import("@/components/StatsBar").then((m) => ({ default: m.StatsBar })),
 );
@@ -61,6 +60,19 @@ const getTopSeverityAreas = (currentData: TrafficData[]) => {
   return [...p99Cells, ...p95Cells].slice(0, 10);
 };
 
+const getTopCongestedAreas = (currentData: TrafficData[]) => {
+  if (!currentData) return [];
+
+  return currentData
+    .filter((cell) => cell.yellow > 0 || cell.red > 0 || cell.dark_red > 0)
+    .sort((a, b) => {
+      const totalA = a.yellow + a.red + a.dark_red;
+      const totalB = b.yellow + b.red + b.dark_red;
+      return totalB - totalA;
+    })
+    .slice(0, 10);
+};
+
 const getLastUpdated = (currentData: TrafficData[] | undefined): Date => {
   if (!currentData || currentData.length === 0) return new Date();
 
@@ -71,6 +83,94 @@ const getLastUpdated = (currentData: TrafficData[] | undefined): Date => {
     ).ts,
   );
 };
+
+const TopAreasList = ({
+  areas,
+  title,
+  description,
+  emptyMessage,
+  severityColors,
+  severityLevelColors,
+  showThresholdP95,
+  onDetailsClick,
+}: {
+  areas: TrafficData[];
+  title: string;
+  description: string;
+  emptyMessage: string;
+  severityColors?: typeof TRAFFIC_SEVERITY_COLORS;
+  severityLevelColors?: typeof SEVERITY_LEVEL_COLORS;
+  showThresholdP95?: boolean;
+  onDetailsClick: (cell: TrafficData) => void;
+}) => (
+  <div className="space-y-3">
+    <div className="flex items-center justify-between">
+      <div>
+        <h2 className="text-lg font-semibold text-foreground">{title}</h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+    </div>
+    <div className="space-y-2">
+      {areas && areas.length > 0 ? (
+        areas.map((cell, index) => (
+          <TrafficAreaCard
+            key={`${cell.x}-${cell.y}`}
+            cell={cell}
+            index={index}
+            severityColors={severityColors}
+            severityLevelColors={severityLevelColors}
+            showThresholdP95={showThresholdP95}
+            onDetailsClick={() => onDetailsClick(cell)}
+          />
+        ))
+      ) : (
+        <div className="text-center py-8 text-muted-foreground">
+          <p>{emptyMessage}</p>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+const TabContent = ({
+  data,
+  mode,
+  highlightTop10,
+  activeTab,
+  children,
+}: {
+  data: TrafficData[];
+  mode?: "traffic" | "severity";
+  highlightTop10?: boolean;
+  activeTab?: string;
+  children: React.ReactNode;
+}) => (
+  <div className="space-y-3">
+    <Suspense
+      fallback={<div className="h-12 bg-muted/20 animate-pulse rounded-lg" />}
+    >
+      <div className="mt-3">
+        <StatsBar data={data} mode={mode} />
+      </div>
+    </Suspense>
+    <Suspense
+      fallback={
+        <div className="aspect-[15/21] bg-muted/20 animate-pulse rounded-lg" />
+      }
+    >
+      <FullTrafficGrid
+        data={data}
+        rows={21}
+        cols={15}
+        mode={mode}
+        highlightTop10={highlightTop10}
+        initialSelectedCell={null}
+        activeTab={activeTab}
+      />
+    </Suspense>
+    {children}
+  </div>
+);
 
 export default function Index() {
   const [activeTab, setActiveTab] = useState("traffic");
@@ -88,8 +188,6 @@ export default function Index() {
     },
   });
 
-  const congestedData = currentData;
-
   const { data: sustainedData } = useQuery({
     queryKey: ["sustainedTraffic"],
     queryFn: async () => {
@@ -102,7 +200,14 @@ export default function Index() {
     },
   });
 
-  const topSeverityAreas = useMemo(() => getTopSeverityAreas(currentData || []), [currentData]);
+  const topSeverityAreas = useMemo(
+    () => getTopSeverityAreas(currentData || []),
+    [currentData],
+  );
+  const topCongestedAreas = useMemo(
+    () => getTopCongestedAreas(currentData || []),
+    [currentData],
+  );
 
   const lastUpdated = useMemo(() => getLastUpdated(currentData), [currentData]);
 
@@ -118,211 +223,81 @@ export default function Index() {
               className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0"
             >
               <Activity className="w-4 h-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm leading-tight text-center">Traffic Analysis</span>
+              <span className="text-xs sm:text-sm leading-tight text-center">
+                Traffic Analysis
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="severity"
               className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0"
             >
               <BarChart3 className="w-4 h-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm leading-tight text-center">Severity Analysis</span>
+              <span className="text-xs sm:text-sm leading-tight text-center">
+                Severity Analysis
+              </span>
             </TabsTrigger>
             <TabsTrigger
               value="sustained"
               className="gap-1 sm:gap-2 flex-col sm:flex-row px-2 py-2 sm:px-3 sm:py-1.5 min-h-[3rem] sm:min-h-0"
             >
               <Clock className="w-4 h-4 flex-shrink-0" />
-              <span className="text-xs sm:text-sm leading-tight text-center">Sustained Traffic</span>
+              <span className="text-xs sm:text-sm leading-tight text-center">
+                Sustained Traffic
+              </span>
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="traffic">
-            <div className="space-y-3">
-              <Suspense
-                fallback={
-                  <div className="h-12 bg-muted/20 animate-pulse rounded-lg" />
-                }
-              >
-                <div className="mt-3">
-                  <StatsBar data={currentData || []} />
-                </div>
-              </Suspense>
-              <Suspense
-                fallback={
-                  <div className="aspect-[15/21] bg-muted/20 animate-pulse rounded-lg" />
-                }
-              >
-                <FullTrafficGrid
-                  data={currentData || []}
-                  rows={21}
-                  cols={15}
-                  highlightTop10={true}
-                  initialSelectedCell={selectedCell}
-                  activeTab={activeTab}
-                />
-              </Suspense>
-
-              {/* Top 10 Details Section */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Top 10 Congested Areas
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Most congested traffic areas right now
-                    </p>
-                  </div>
-                </div>
-
-                {/* Congested Areas List */}
-                <div className="space-y-2">
-                  {congestedData && congestedData.length > 0 ? (
-                    congestedData
-                      .slice(0, 10)
-                      .map((cell, index) => (
-                        <TrafficAreaCard
-                          key={`${cell.x}-${cell.y}`}
-                          cell={cell}
-                          index={index}
-                          severityColors={TRAFFIC_SEVERITY_COLORS}
-                          onDetailsClick={() => setSelectedCell(cell)}
-                        />
-                      ))
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No congested areas data available</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <TabContent
+              data={currentData || []}
+              highlightTop10={true}
+              activeTab={activeTab}
+            >
+              <TopAreasList
+                areas={topCongestedAreas}
+                title="Top 10 Congested Areas"
+                description="Most congested traffic areas right now"
+                emptyMessage="No congested areas data available"
+                severityColors={TRAFFIC_SEVERITY_COLORS}
+                onDetailsClick={setSelectedCell}
+              />
+            </TabContent>
           </TabsContent>
 
           <TabsContent value="severity">
-            <div className="space-y-3">
-              <Suspense
-                fallback={
-                  <div className="h-12 bg-muted/20 animate-pulse rounded-lg" />
-                }
-              >
-                <div className="mt-3">
-                  <StatsBar data={currentData || []} mode="severity" />
-                </div>
-              </Suspense>
-              <Suspense
-                fallback={
-                  <div className="aspect-[15/21] bg-muted/20 animate-pulse rounded-lg" />
-                }
-              >
-                <FullTrafficGrid
-                  data={currentData || []}
-                  rows={21}
-                  cols={15}
-                  mode="severity"
-                  highlightTop10={true}
-                  initialSelectedCell={selectedCell}
-                  activeTab={activeTab}
-                />
-              </Suspense>
-
-              {/* Top 10 Severity Areas Section */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Top 10 Severity Anomalies
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Areas with highest severity above historical thresholds
-                    </p>
-                  </div>
-                </div>
-
-                {/* Severity Areas List */}
-                <div className="space-y-2">
-                  {topSeverityAreas && topSeverityAreas.length > 0 ? (
-                    topSeverityAreas.map((area, index) => (
-                      <TrafficAreaCard
-                        key={`${area.x}-${area.y}`}
-                        cell={area}
-                        index={index}
-                        severityLevelColors={SEVERITY_LEVEL_COLORS}
-                        onDetailsClick={() => setSelectedCell(area)}
-                      />
-                    ))
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No severity anomalies data available</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <TabContent
+              data={currentData || []}
+              mode="severity"
+              highlightTop10={true}
+              activeTab={activeTab}
+            >
+              <TopAreasList
+                areas={topSeverityAreas}
+                title="Top 10 Severity Anomalies"
+                description="Areas with highest severity above historical thresholds"
+                emptyMessage="No severity anomalies data available"
+                severityLevelColors={SEVERITY_LEVEL_COLORS}
+                onDetailsClick={setSelectedCell}
+              />
+            </TabContent>
           </TabsContent>
 
           <TabsContent value="sustained">
-            <div className="space-y-3">
-              <Suspense
-                fallback={
-                  <div className="h-12 bg-muted/20 animate-pulse rounded-lg" />
-                }
-              >
-                <div className="mt-3">
-                  <StatsBar data={sustainedData || []} />
-                </div>
-              </Suspense>
-              <Suspense
-                fallback={
-                  <div className="aspect-[15/21] bg-muted/20 animate-pulse rounded-lg" />
-                }
-              >
-                <FullTrafficGrid
-                  data={sustainedData || []}
-                  rows={21}
-                  cols={15}
-                  highlightTop10={true}
-                  initialSelectedCell={selectedCell}
-                  activeTab={activeTab}
-                />
-              </Suspense>
-
-              {/* Sustained Traffic Areas Section */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">
-                      Sustained Traffic Areas
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      Areas with persistent high traffic levels
-                    </p>
-                  </div>
-                </div>
-
-                {/* Sustained Areas List */}
-                <div className="space-y-2">
-                  {sustainedData && sustainedData.length > 0 ? (
-                    sustainedData
-                      .slice(0, 10)
-                      .map((cell, index) => (
-                        <TrafficAreaCard
-                          key={`${cell.x}-${cell.y}`}
-                          cell={cell}
-                          index={index}
-                          showThresholdP95={true}
-                          severityColors={TRAFFIC_SEVERITY_COLORS}
-                          onDetailsClick={() => setSelectedCell(cell)}
-                        />
-                      ))
-                  ) : (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <p>No sustained traffic data available</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <TabContent
+              data={sustainedData || []}
+              highlightTop10={true}
+              activeTab={activeTab}
+            >
+              <TopAreasList
+                areas={(sustainedData || []).slice(0, 10)}
+                title="Sustained Traffic Areas"
+                description="Areas with persistent high traffic levels"
+                emptyMessage="No sustained traffic data available"
+                showThresholdP95={true}
+                severityColors={TRAFFIC_SEVERITY_COLORS}
+                onDetailsClick={setSelectedCell}
+              />
+            </TabContent>
           </TabsContent>
         </Tabs>
       </main>

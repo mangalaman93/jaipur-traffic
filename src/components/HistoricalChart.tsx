@@ -47,7 +47,7 @@ export function HistoricalChart({
 
     const startTime = formatRangeTime(parseISTTimestamp(sortedData[0].ts));
     const endTime = formatRangeTime(
-      parseISTTimestamp(sortedData[sortedData.length - 1].ts)
+      parseISTTimestamp(sortedData[sortedData.length - 1].ts),
     );
 
     return `${startTime} - ${endTime}`;
@@ -108,8 +108,15 @@ export function HistoricalChart({
 
       <div className="h-96 bg-muted/20 rounded-lg border border-border/50 p-4">
         <ResponsiveContainer width="100%" height={340}>
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+          <LineChart
+            data={chartData}
+            margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              strokeOpacity={0.1}
+            />
             <XAxis
               dataKey="timestamp"
               stroke="currentColor"

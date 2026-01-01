@@ -3,8 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { TrafficData } from "@/types/traffic";
 import { parseISTTimestamp, getHoursAgo } from "@/utils/timeUtils";
-import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/utils/coordinateUtils";
-import { calculateSeverityDifferences, calculateTotalTraffic } from "@/utils/trafficUtils";
+import {
+  getCellCenterCoordinates,
+  getGoogleMapsUrl,
+} from "@/utils/coordinateUtils";
+import {
+  calculateSeverityDifferences,
+  calculateTotalTraffic,
+} from "@/utils/trafficUtils";
 import { formatRangeTime } from "@/utils/timeFormat";
 import {
   Dialog,
@@ -82,7 +88,9 @@ const getTop10SeverityCells = (data: TrafficData[]): Set<string> => {
     .sort((a, b) => b.p95Diff - a.p95Diff)
     .slice(0, 10 - p99Cells.length);
 
-  return new Set([...p99Cells, ...p95Cells].map((cell) => `${cell.x}-${cell.y}`));
+  return new Set(
+    [...p99Cells, ...p95Cells].map((cell) => `${cell.x}-${cell.y}`),
+  );
 };
 
 const getTop10TrafficCells = (data: TrafficData[]): Set<string> => {
@@ -323,7 +331,7 @@ export function FullTrafficGrid({
                   Last updated:{" "}
                   {selectedCell?.ts
                     ? `${formatRangeTime(parseISTTimestamp(selectedCell.ts))} (${getHoursAgo(
-                        parseISTTimestamp(selectedCell.ts)
+                        parseISTTimestamp(selectedCell.ts),
                       )})`
                     : "N/A"}
                 </div>
@@ -331,8 +339,10 @@ export function FullTrafficGrid({
               {selectedCoords && (
                 <a
                   href={getGoogleMapsUrl(
-                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y).lat,
-                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y).lng,
+                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y)
+                      .lat,
+                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y)
+                      .lng,
                   )}
                   target="_blank"
                   rel="noopener noreferrer"

@@ -9,7 +9,9 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [react(), mode === "development" && componentTagger()].filter(
+    Boolean,
+  ),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -20,34 +22,34 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks(id) {
           // Keep React and React-DOM together
-          if (id.includes('react') || id.includes('react-dom')) {
-            return 'react-vendor';
+          if (id.includes("react") || id.includes("react-dom")) {
+            return "react-vendor";
           }
           // Split router separately
-          if (id.includes('react-router-dom')) {
-            return 'router';
+          if (id.includes("react-router-dom")) {
+            return "router";
           }
           // Split query library
-          if (id.includes('@tanstack/react-query')) {
-            return 'query';
+          if (id.includes("@tanstack/react-query")) {
+            return "query";
           }
           // Split UI components
-          if (id.includes('@radix-ui')) {
-            return 'ui-vendor';
+          if (id.includes("@radix-ui")) {
+            return "ui-vendor";
           }
           // Split utilities
-          if (id.includes('date-fns') || id.includes('clsx')) {
-            return 'utils';
+          if (id.includes("date-fns") || id.includes("clsx")) {
+            return "utils";
           }
           // Split icons
-          if (id.includes('lucide-react')) {
-            return 'icons';
+          if (id.includes("lucide-react")) {
+            return "icons";
           }
         },
       },
     },
     chunkSizeWarningLimit: 1000,
-    target: 'esnext',
+    target: "esnext",
     cssCodeSplit: true,
   },
 }));
