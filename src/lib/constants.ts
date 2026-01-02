@@ -26,21 +26,21 @@ const API_BASE = "https://traffic-worker.mangalaman93.workers.dev";
  * @throws Error if parameters are invalid
  */
 const buildHistoryUrl = (x: number, y: number, duration: string): string => {
-  // Validate x coordinate (must be integer between 0 and 20)
-  if (!Number.isInteger(x) || x < 0 || x > 20) {
-    throw new Error(`Invalid x coordinate: ${x}. Must be an integer between 0 and 20.`);
+  // Validate x coordinate (must be integer between 0 and 14)
+  if (!Number.isInteger(x) || x < 0 || x > 14) {
+    throw new Error(`Invalid x coordinate: ${x}. Must be an integer between 0 and 14.`);
   }
-  
-  // Validate y coordinate (must be integer between 0 and 14)
-  if (!Number.isInteger(y) || y < 0 || y > 14) {
-    throw new Error(`Invalid y coordinate: ${y}. Must be an integer between 0 and 14.`);
+
+  // Validate y coordinate (must be integer between 0 and 20)
+  if (!Number.isInteger(y) || y < 0 || y > 20) {
+    throw new Error(`Invalid y coordinate: ${y}. Must be an integer between 0 and 20.`);
   }
-  
+
   // Validate duration against whitelist
   if (!DURATION_OPTIONS.includes(duration as typeof DURATION_OPTIONS[number])) {
     throw new Error(`Invalid duration: ${duration}. Must be one of: ${DURATION_OPTIONS.join(', ')}`);
   }
-  
+
   // Use encodeURIComponent for all user-controlled values
   return `${API_BASE}/history?x=${encodeURIComponent(x)}&y=${encodeURIComponent(y)}&duration=${encodeURIComponent(duration)}`;
 };
@@ -51,7 +51,6 @@ export const API_ENDPOINTS = {
   HISTORY: buildHistoryUrl,
 } as const;
 
-export const GOOGLE_MAPS_URL =
-  "https://www.google.com/maps/d/edit?mid=1AW5K34KiZmKo32vtBsmOnzNSU45oQS4";
+export const GOOGLE_MAPS_URL = "https://www.google.com/maps/d/edit?mid=1AW5K34KiZmKo32vtBsmOnzNSU45oQS4";
 
 export const TIMEZONE = "Asia/Kolkata" as const;

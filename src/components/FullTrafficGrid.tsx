@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/cn";
 import { TrafficData } from "@/lib/types";
-import { validateTrafficData } from "@/lib/validation";
+import { validateHistoricalTrafficData } from "@/lib/validation";
 import { parseISTTimestamp, getHoursAgo } from "@/lib/timeUtils";
 import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/lib/coordinateUtils";
 import { calculateSeverityDifferences, calculateTotalTraffic } from "@/lib/trafficUtils";
@@ -104,7 +104,7 @@ export function FullTrafficGrid({
         throw new Error("Failed to fetch historical data");
       }
       const data = await response.json();
-      return validateTrafficData(data) as TrafficData[];
+      return validateHistoricalTrafficData(data) as TrafficData[];
     },
     enabled: !!selectedCoords,
   });
