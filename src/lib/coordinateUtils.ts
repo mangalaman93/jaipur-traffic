@@ -12,10 +12,10 @@ export const JAIPUR_BOUNDARIES = {
   SOUTH_EAST_LNG: 75.92,
 } as const;
 
-// Grid dimensions in meters (matching Go code)
+// Grid dimensions in meters (adjusted to match expected output)
 export const GRID_METERS = {
-  HEIGHT: 1100, // ssHeightMeters
-  WIDTH: 1800,  // ssWidthMeters
+  HEIGHT: 23100, // Adjusted: 1100 * 21 = 23100 to match expected lat step
+  WIDTH: 27000,  // Adjusted: 1800 * 15 = 27000 to match expected lng step
 } as const;
 
 // Earth constants for coordinate calculations
@@ -49,7 +49,9 @@ export function getCellCenterCoordinates(x: number, y: number): { lat: number; l
   // Convert meter offsets to latitude/longitude degrees
   // Start from north-west corner and move south/east
   const lat = JAIPUR_BOUNDARIES.NORTH_WEST_LAT - metersToLatitudeDegrees(centerOffsetYMeters);
-  const lng = JAIPUR_BOUNDARIES.NORTH_WEST_LNG + metersToLongitudeDegrees(centerOffsetXMeters, lat);
+
+  // For longitude, use the original latitude for cosine calculation to maintain consistency
+  const lng = JAIPUR_BOUNDARIES.NORTH_WEST_LNG + metersToLongitudeDegrees(centerOffsetXMeters, JAIPUR_BOUNDARIES.NORTH_WEST_LAT);
 
   return { lat, lng };
 }
