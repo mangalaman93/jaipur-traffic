@@ -138,7 +138,6 @@ interface TabContentProps {
   activeTab?: string;
   selectedCell?: TrafficData | null;
   setSelectedCell?: (cell: TrafficData | null) => void;
-  children: React.ReactNode;
 }
 
 const TabContent = ({
@@ -148,7 +147,6 @@ const TabContent = ({
   activeTab,
   selectedCell,
   setSelectedCell,
-  children,
 }: TabContentProps) => (
   <div className="space-y-3">
     <Suspense fallback={<div className="h-12 bg-muted/20 animate-pulse rounded-lg" />}>
@@ -168,19 +166,7 @@ const TabContent = ({
           }
         />
       }
-    >
-      <FullTrafficGrid
-        data={data}
-        rows={GRID_DIMENSIONS.ROWS}
-        cols={GRID_DIMENSIONS.COLS}
-        mode={mode}
-        highlightTop10={highlightTop10}
-        initialSelectedCell={selectedCell}
-        activeTab={activeTab}
-        onDialogClose={() => setSelectedCell?.(null)}
-      />
-    </Suspense>
-    {children}
+    />
   </div>
 );
 
@@ -270,16 +256,41 @@ export default function Index() {
               activeTab={activeTab}
               selectedCell={selectedCell}
               setSelectedCell={setSelectedCell}
+            />
+            <Suspense
+              fallback={
+                <div
+                  className={
+                    "aspect-[" +
+                    GRID_DIMENSIONS.COLS +
+                    "/" +
+                    GRID_DIMENSIONS.ROWS +
+                    "] bg-muted/20 animate-pulse rounded-lg"
+                  }
+                />
+              }
             >
-              <TopAreasList
-                areas={topCongestedAreas}
-                title="Top 10 Congested Areas"
-                description="Most congested traffic areas right now"
-                emptyMessage="No congested areas data available"
-                severityColors={TRAFFIC_SEVERITY_COLORS}
-                onDetailsClick={setSelectedCell}
+              <FullTrafficGrid
+                data={currentData || []}
+                rows={GRID_DIMENSIONS.ROWS}
+                cols={GRID_DIMENSIONS.COLS}
+                mode="traffic"
+                highlightTop10={true}
+                initialSelectedCell={selectedCell}
+                activeTab={activeTab}
+                onDialogClose={() => setSelectedCell?.(null)}
+                topAreasList={
+                  <TopAreasList
+                    areas={topCongestedAreas}
+                    title="Top 10 Congested Areas"
+                    description="Most congested traffic areas right now"
+                    emptyMessage="No congested areas data available"
+                    severityColors={TRAFFIC_SEVERITY_COLORS}
+                    onDetailsClick={setSelectedCell}
+                  />
+                }
               />
-            </TabContent>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="severity">
@@ -290,16 +301,41 @@ export default function Index() {
               activeTab={activeTab}
               selectedCell={selectedCell}
               setSelectedCell={setSelectedCell}
+            />
+            <Suspense
+              fallback={
+                <div
+                  className={
+                    "aspect-[" +
+                    GRID_DIMENSIONS.COLS +
+                    "/" +
+                    GRID_DIMENSIONS.ROWS +
+                    "] bg-muted/20 animate-pulse rounded-lg"
+                  }
+                />
+              }
             >
-              <TopAreasList
-                areas={topSeverityAreas}
-                title="Top 10 Severity Anomalies"
-                description="Areas with highest severity above historical thresholds"
-                emptyMessage="No severity anomalies data available"
-                severityLevelColors={SEVERITY_LEVEL_COLORS}
-                onDetailsClick={setSelectedCell}
+              <FullTrafficGrid
+                data={currentData || []}
+                rows={GRID_DIMENSIONS.ROWS}
+                cols={GRID_DIMENSIONS.COLS}
+                mode="severity"
+                highlightTop10={true}
+                initialSelectedCell={selectedCell}
+                activeTab={activeTab}
+                onDialogClose={() => setSelectedCell?.(null)}
+                topAreasList={
+                  <TopAreasList
+                    areas={topSeverityAreas}
+                    title="Top 10 Severity Anomalies"
+                    description="Areas with highest severity above historical thresholds"
+                    emptyMessage="No severity anomalies data available"
+                    severityLevelColors={SEVERITY_LEVEL_COLORS}
+                    onDetailsClick={setSelectedCell}
+                  />
+                }
               />
-            </TabContent>
+            </Suspense>
           </TabsContent>
 
           <TabsContent value="sustained">
@@ -309,17 +345,41 @@ export default function Index() {
               activeTab={activeTab}
               selectedCell={selectedCell}
               setSelectedCell={setSelectedCell}
+            />
+            <Suspense
+              fallback={
+                <div
+                  className={
+                    "aspect-[" +
+                    GRID_DIMENSIONS.COLS +
+                    "/" +
+                    GRID_DIMENSIONS.ROWS +
+                    "] bg-muted/20 animate-pulse rounded-lg"
+                  }
+                />
+              }
             >
-              <TopAreasList
-                areas={(sustainedData || []).slice(0, 10)}
-                title="Sustained Traffic Areas"
-                description="Areas with persistent high traffic levels"
-                emptyMessage="No sustained traffic data available"
-                showThresholdP95={true}
-                severityColors={TRAFFIC_SEVERITY_COLORS}
-                onDetailsClick={setSelectedCell}
+              <FullTrafficGrid
+                data={sustainedData || []}
+                rows={GRID_DIMENSIONS.ROWS}
+                cols={GRID_DIMENSIONS.COLS}
+                highlightTop10={true}
+                initialSelectedCell={selectedCell}
+                activeTab={activeTab}
+                onDialogClose={() => setSelectedCell?.(null)}
+                topAreasList={
+                  <TopAreasList
+                    areas={(sustainedData || []).slice(0, 10)}
+                    title="Sustained Traffic Areas"
+                    description="Areas with persistent high traffic levels"
+                    emptyMessage="No sustained traffic data available"
+                    showThresholdP95={true}
+                    severityColors={TRAFFIC_SEVERITY_COLORS}
+                    onDetailsClick={setSelectedCell}
+                  />
+                }
               />
-            </TabContent>
+            </Suspense>
           </TabsContent>
         </Tabs>
       </main>

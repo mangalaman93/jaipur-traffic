@@ -19,6 +19,7 @@ import {
   getTop10SeverityCells,
   getTop10TrafficCells,
 } from "@/lib/gridUtils";
+import { calculateTotalTraffic } from "@/lib/trafficUtils";
 
 interface FullTrafficGridProps {
   data: TrafficData[];
@@ -29,6 +30,7 @@ interface FullTrafficGridProps {
   initialSelectedCell?: TrafficData | null;
   activeTab?: string;
   onDialogClose?: () => void;
+  topAreasList?: React.ReactNode;
 }
 
 export function FullTrafficGrid({
@@ -40,6 +42,7 @@ export function FullTrafficGrid({
   initialSelectedCell,
   activeTab = "traffic",
   onDialogClose,
+  topAreasList,
 }: FullTrafficGridProps) {
   // State management
   const [selectedCell, setSelectedCell] = useState<TrafficData | null>(initialSelectedCell || null);
@@ -104,18 +107,57 @@ export function FullTrafficGrid({
   return (
     <>
       <div className="space-y-4">
-        {/* OpenStreetMap Grid */}
-        <div 
-          className="rounded-lg overflow-hidden border border-border"
-          style={{ height: "500px" }}
-        >
-          <TrafficMapGrid
-            data={data}
-            mode={mode}
-            highlightTop10={highlightTop10}
-            top10Cells={top10Cells}
-            onCellClick={handleCellClick}
-          />
+        {/* Map and Top 10 side by side */}
+        <div className="flex gap-6">
+          {/* OpenStreetMap Grid */}
+          <div
+            className="rounded-lg overflow-hidden border border-border flex-shrink-0"
+            style={{ height: "900px", width: "70%" }}
+          >
+            <TrafficMapGrid
+              data={data}
+              mode={mode}
+              highlightTop10={highlightTop10}
+              top10Cells={top10Cells}
+              onCellClick={handleCellClick}
+            />
+          </div>
+
+          {/* Top 10 List */}
+          <div className="flex-shrink-0" style={{ width: "30%" }}>
+            {topAreasList || (
+              <div className="bg-card rounded-lg border p-4 h-full">
+                <h3 className="text-lg font-semibold mb-4">
+                  {mode === "severity" ? "Top 10 Severity Areas" : 
+                   "Top 10 Congested Areas"}
+                </h3>
+                <div className="space-y-2">
+                  {Array.from(top10Cells).slice(0, 10).map((cellKey, index) => {
+                    const [x, y] = cellKey.split('-').map(Number);
+                    const cell = dataMap.get(cellKey);
+                    if (!cell) return null;
+                    
+                    return (
+                      <div
+                        key={cellKey}
+                        className="flex items-center justify-between p-2 rounded border bg-muted hover:bg-muted/80 cursor-pointer transition-colors"
+                        onClick={() => setSelectedCoords({ x, y })}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">#{index + 1}</span>
+                          <span className="text-sm">Grid [{x}, {y}]</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {mode === "severity" ? `Severity: ${cell.latest_severity || 'N/A'}` :
+                           `Traffic: ${calculateTotalTraffic(cell)}`}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Legend */}

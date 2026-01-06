@@ -32,8 +32,8 @@ function getCellColor(
 } {
   if (!cell) {
     return {
-      fillColor: "transparent",
-      fillOpacity: 0,
+      fillColor: "#f1f5f9",
+      fillOpacity: 0.3,
     };
   }
 
@@ -55,16 +55,16 @@ function getCellColor(
       };
     }
     return {
-      fillColor: "transparent",
-      fillOpacity: 0,
+      fillColor: "#f1f5f9",
+      fillOpacity: 0.3,
     };
   }
 
   // Traffic mode
   if (total === 0) {
     return {
-      fillColor: "transparent",
-      fillOpacity: 0,
+      fillColor: "#f1f5f9",
+      fillOpacity: 0.3,
     };
   }
 
@@ -88,8 +88,8 @@ function getCellColor(
   }
 
   return {
-    fillColor: "transparent",
-    fillOpacity: 0,
+    fillColor: "#f1f5f9",
+    fillOpacity: 0.3,
   };
 }
 
