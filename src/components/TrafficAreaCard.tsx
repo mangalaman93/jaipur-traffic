@@ -1,7 +1,7 @@
 import React from "react";
 import { TrafficData } from "@/lib/types";
 import { cn } from "@/lib/cn";
-import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/lib/coordinateUtils";
+import { getCellCenter, getGoogleMapsUrl } from "@/lib/gridBoundaries";
 import { calculateTotalTraffic, getTrafficSeverityLevel } from "@/lib/trafficUtils";
 
 interface TrafficAreaCardProps {
@@ -80,8 +80,8 @@ export function TrafficAreaCard({
               {/* Google Maps Link */}
               <a
                 href={getGoogleMapsUrl(
-                  getCellCenterCoordinates(cell.x, cell.y).lat,
-                  getCellCenterCoordinates(cell.x, cell.y).lng
+                  getCellCenter(cell.x, cell.y).lat,
+                  getCellCenter(cell.x, cell.y).lng
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
