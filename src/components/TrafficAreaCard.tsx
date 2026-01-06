@@ -2,7 +2,10 @@ import React from "react";
 import { TrafficData } from "@/lib/types";
 import { cn } from "@/lib/cn";
 import { getCellCenter, getGoogleMapsUrl } from "@/lib/gridBoundaries";
-import { calculateTotalTraffic, getTrafficSeverityLevel } from "@/lib/trafficUtils";
+import {
+  calculateTotalTraffic,
+  getTrafficSeverityLevel,
+} from "@/lib/trafficUtils";
 
 interface TrafficAreaCardProps {
   cell: TrafficData & { severityLevel?: string };
@@ -35,7 +38,9 @@ export function TrafficAreaCard({
 
   const getSeverityBadgeText = () => {
     if (severityLevelColors && cell.severityLevel) {
-      return cell.severityLevel.charAt(0).toUpperCase() + cell.severityLevel.slice(1);
+      return (
+        cell.severityLevel.charAt(0).toUpperCase() + cell.severityLevel.slice(1)
+      );
     }
     return severity.charAt(0).toUpperCase() + severity.slice(1);
   };
@@ -48,7 +53,7 @@ export function TrafficAreaCard({
           className={cn(
             "flex-shrink-0 flex items-center justify-center",
             "w-6 h-6 rounded-full bg-primary/10",
-            "text-primary font-bold text-xs"
+            "text-primary font-bold text-xs",
           )}
         >
           {index + 1}
@@ -68,7 +73,7 @@ export function TrafficAreaCard({
               <div
                 className={cn(
                   "flex-shrink-0 px-1.5 py-0.5 rounded-full text-xs font-medium border",
-                  getSeverityBadgeClass()
+                  getSeverityBadgeClass(),
                 )}
               >
                 {getSeverityBadgeText()}
@@ -81,7 +86,7 @@ export function TrafficAreaCard({
               <a
                 href={getGoogleMapsUrl(
                   getCellCenter(cell.x, cell.y).lat,
-                  getCellCenter(cell.x, cell.y).lng
+                  getCellCenter(cell.x, cell.y).lng,
                 )}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -89,7 +94,7 @@ export function TrafficAreaCard({
                   "flex-shrink-0 inline-flex items-center justify-center",
                   "w-6 h-6",
                   "bg-primary text-primary-foreground rounded-full",
-                  "hover:bg-primary/90 transition-colors"
+                  "hover:bg-primary/90 transition-colors",
                 )}
                 title="View on Google Maps"
               >
@@ -120,7 +125,7 @@ export function TrafficAreaCard({
                   "flex-shrink-0 inline-flex items-center justify-center",
                   "w-6 h-6",
                   "bg-secondary text-secondary-foreground rounded-full",
-                  "hover:bg-secondary/80 transition-colors"
+                  "hover:bg-secondary/80 transition-colors",
                 )}
                 title="View Details"
                 onClick={() => onDetailsClick?.()}
@@ -181,7 +186,9 @@ export function TrafficAreaCard({
             <div className="flex gap-2 text-xs">
               <span>
                 Y:{" "}
-                <span className="font-bold text-traffic-yellow">{cell.yellow}</span>
+                <span className="font-bold text-traffic-yellow">
+                  {cell.yellow}
+                </span>
               </span>
               <span>
                 R:{" "}

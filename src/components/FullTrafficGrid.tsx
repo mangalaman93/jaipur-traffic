@@ -6,13 +6,22 @@ import { validateHistoricalTrafficData } from "@/lib/validation";
 import { parseISTTimestamp, getHoursAgo } from "@/lib/timeUtils";
 import { getCellCenter, getGoogleMapsUrl } from "@/lib/gridBoundaries";
 import { formatRangeTime } from "@/lib/timeFormat";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { HistoricalChart } from "@/components/HistoricalChart";
 import { TrafficMapGrid } from "@/components/TrafficMapGrid";
 import { TrafficLegend } from "@/components/TrafficLegend";
 import { DailyAverageTraffic } from "@/components/DailyAverageTraffic";
 import { SeverityInfo } from "@/components/SeverityInfo";
-import { GRID_DIMENSIONS, API_ENDPOINTS, DURATION_OPTIONS } from "@/lib/constants";
+import {
+  GRID_DIMENSIONS,
+  API_ENDPOINTS,
+  DURATION_OPTIONS,
+} from "@/lib/constants";
 import {
   createCellKey,
   createDefaultCell,
@@ -45,17 +54,25 @@ export function FullTrafficGrid({
   topAreasList,
 }: FullTrafficGridProps) {
   // State management
-  const [selectedCell, setSelectedCell] = useState<TrafficData | null>(initialSelectedCell || null);
+  const [selectedCell, setSelectedCell] = useState<TrafficData | null>(
+    initialSelectedCell || null,
+  );
   const [selectedCoords, setSelectedCoords] = useState<{
     x: number;
     y: number;
-  } | null>(initialSelectedCell ? { x: initialSelectedCell.x, y: initialSelectedCell.y } : null);
-  const [selectedDuration, setSelectedDuration] = useState<string>(DURATION_OPTIONS[3]);
+  } | null>(
+    initialSelectedCell
+      ? { x: initialSelectedCell.x, y: initialSelectedCell.y }
+      : null,
+  );
+  const [selectedDuration, setSelectedDuration] = useState<string>(
+    DURATION_OPTIONS[3],
+  );
 
   // Computed values
   const dataMap = useMemo(() => {
     const map = new Map<string, TrafficData>();
-    data.forEach(item => {
+    data.forEach((item) => {
       map.set(createCellKey(item.x, item.y), item);
     });
     return map;
@@ -63,24 +80,37 @@ export function FullTrafficGrid({
 
   const top10Cells = useMemo(() => {
     if (!highlightTop10) return new Set<string>();
-    return mode === "severity" ? getTop10SeverityCells(data) : getTop10TrafficCells(data);
+    return mode === "severity"
+      ? getTop10SeverityCells(data)
+      : getTop10TrafficCells(data);
   }, [data, highlightTop10, mode]);
 
   // Sync with parent state
   React.useEffect(() => {
     setSelectedCell(initialSelectedCell || null);
     setSelectedCoords(
-      initialSelectedCell ? { x: initialSelectedCell.x, y: initialSelectedCell.y } : null
+      initialSelectedCell
+        ? { x: initialSelectedCell.x, y: initialSelectedCell.y }
+        : null,
     );
   }, [initialSelectedCell]);
 
   // Fetch historical data when a cell is selected
   const { data: historicalData, isLoading: isHistoricalLoading } = useQuery({
-    queryKey: ["historicalData", selectedCoords?.x, selectedCoords?.y, selectedDuration],
+    queryKey: [
+      "historicalData",
+      selectedCoords?.x,
+      selectedCoords?.y,
+      selectedDuration,
+    ],
     queryFn: async () => {
       if (!selectedCoords) return [];
 
-      const url = API_ENDPOINTS.HISTORY(selectedCoords.x, selectedCoords.y, selectedDuration);
+      const url = API_ENDPOINTS.HISTORY(
+        selectedCoords.x,
+        selectedCoords.y,
+        selectedDuration,
+      );
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Failed to fetch historical data");
@@ -110,9 +140,7 @@ export function FullTrafficGrid({
         {/* Map and Top 10 side by side */}
         <div className="flex flex-col gap-6 sm:flex-row sm:gap-6">
           {/* OpenStreetMap Grid */}
-          <div
-            className="rounded-lg overflow-hidden border border-border flex-shrink-0 w-full sm:w-[70%] h-[350px] sm:h-[900px]"
-          >
+          <div className="rounded-lg overflow-hidden border border-border flex-shrink-0 w-full sm:w-[70%] h-[350px] sm:h-[900px]">
             <TrafficMapGrid
               data={data}
               mode={mode}
@@ -146,8 +174,12 @@ export function FullTrafficGrid({
                           onClick={() => setSelectedCoords({ x, y })}
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">#{index + 1}</span>
-                            <span className="text-sm">Grid [{x}, {y}]</span>
+                            <span className="text-sm font-medium">
+                              #{index + 1}
+                            </span>
+                            <span className="text-sm">
+                              Grid [{x}, {y}]
+                            </span>
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {mode === "severity"
@@ -167,7 +199,7 @@ export function FullTrafficGrid({
         <div
           className={cn(
             "flex flex-wrap items-center justify-center",
-            "gap-3 sm:gap-6 mt-4 text-xs sm:text-sm"
+            "gap-3 sm:gap-6 mt-4 text-xs sm:text-sm",
           )}
         >
           <TrafficLegend mode={mode} />
@@ -177,7 +209,7 @@ export function FullTrafficGrid({
       {/* Dialog for cell details */}
       <Dialog
         open={!!selectedCell}
-        onOpenChange={open => {
+        onOpenChange={(open) => {
           if (!open) {
             setSelectedCell(null);
             setSelectedCoords(null);
@@ -189,7 +221,7 @@ export function FullTrafficGrid({
           className={cn(
             "sm:max-w-[800px] max-h-[90vh] overflow-y-auto",
             "data-[state=open]:slide-in-from-top-[10%]",
-            "data-[state=closed]:slide-out-to-top-[10%]"
+            "data-[state=closed]:slide-out-to-top-[10%]",
           )}
         >
           <DialogHeader>
@@ -201,16 +233,19 @@ export function FullTrafficGrid({
                 <div className="text-xs text-muted-foreground font-mono">
                   Last updated:{" "}
                   {selectedCell?.ts
-                    ? `${formatRangeTime(parseISTTimestamp(selectedCell.ts))} (${getHoursAgo(
-                        parseISTTimestamp(selectedCell.ts)
-                      )})`
+                    ? `${formatRangeTime(
+                        parseISTTimestamp(selectedCell.ts),
+                      )} (${getHoursAgo(parseISTTimestamp(selectedCell.ts))})`
                     : "N/A"}
                 </div>
               </div>
               {selectedCoords && (
                 <a
                   href={(() => {
-                    const center = getCellCenter(selectedCoords.x, selectedCoords.y);
+                    const center = getCellCenter(
+                      selectedCoords.x,
+                      selectedCoords.y,
+                    );
                     return getGoogleMapsUrl(center.lat, center.lng);
                   })()}
                   target="_blank"
@@ -218,10 +253,15 @@ export function FullTrafficGrid({
                   className={cn(
                     "inline-flex items-center gap-2 px-4 py-2",
                     "bg-primary text-primary-foreground rounded-lg",
-                    "hover:bg-primary/90 transition-colors text-sm font-medium"
+                    "hover:bg-primary/90 transition-colors text-sm font-medium",
                   )}
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -246,7 +286,7 @@ export function FullTrafficGrid({
                 <div
                   className={cn(
                     "text-center p-3 rounded-lg",
-                    "bg-traffic-yellow/20 border border-traffic-yellow/50"
+                    "bg-traffic-yellow/20 border border-traffic-yellow/50",
                   )}
                 >
                   <div className="text-2xl font-bold text-traffic-yellow">
@@ -257,16 +297,18 @@ export function FullTrafficGrid({
                 <div
                   className={cn(
                     "text-center p-3 rounded-lg",
-                    "bg-traffic-red/20 border border-traffic-red/50"
+                    "bg-traffic-red/20 border border-traffic-red/50",
                   )}
                 >
-                  <div className="text-2xl font-bold text-traffic-red">{selectedCell.red}</div>
+                  <div className="text-2xl font-bold text-traffic-red">
+                    {selectedCell.red}
+                  </div>
                   <div className="text-xs text-muted-foreground">Red</div>
                 </div>
                 <div
                   className={cn(
                     "text-center p-3 rounded-lg",
-                    "bg-traffic-dark-red/20 border border-traffic-dark-red/50"
+                    "bg-traffic-dark-red/20 border border-traffic-dark-red/50",
                   )}
                 >
                   <div className="text-2xl font-bold text-traffic-dark-red">
@@ -278,7 +320,10 @@ export function FullTrafficGrid({
 
               {/* Severity Information */}
               <div className="space-y-2">
-                <SeverityInfo selectedCell={selectedCell} activeTab={activeTab} />
+                <SeverityInfo
+                  selectedCell={selectedCell}
+                  activeTab={activeTab}
+                />
               </div>
 
               {/* Daily Average Traffic */}
@@ -309,7 +354,7 @@ export function FullTrafficGrid({
                   "w-24 h-24 mx-auto mb-4",
                   "rounded-lg bg-muted/30",
                   "border border-border/50",
-                  "flex items-center justify-center"
+                  "flex items-center justify-center",
                 )}
               >
                 <span className="text-2xl font-bold">0</span>

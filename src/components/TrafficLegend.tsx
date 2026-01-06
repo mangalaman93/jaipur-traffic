@@ -12,7 +12,9 @@ export function TrafficLegend({ mode }: TrafficLegendProps) {
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-yellow-600/40 border border-yellow-600" />
-          <span className="text-muted-foreground">Moderate (&gt; P95, ≤ P99)</span>
+          <span className="text-muted-foreground">
+            Moderate (&gt; P95, ≤ P99)
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-sm bg-red-600/50 border border-red-600" />

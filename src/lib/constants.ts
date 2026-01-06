@@ -1,5 +1,6 @@
 export const TRAFFIC_SEVERITY_COLORS = {
-  critical: "bg-traffic-dark-red/20 border-traffic-dark-red/50 text-traffic-dark-red",
+  critical:
+    "bg-traffic-dark-red/20 border-traffic-dark-red/50 text-traffic-dark-red",
   high: "bg-traffic-red/20 border-traffic-red/50 text-traffic-red",
   medium: "bg-traffic-yellow/20 border-traffic-yellow/50 text-traffic-yellow",
 } as const;
@@ -10,7 +11,15 @@ export const SEVERITY_LEVEL_COLORS = {
   normal: "bg-muted/20 border-border/50 text-muted-foreground",
 } as const;
 
-export const DURATION_OPTIONS = ["1h", "6h", "12h", "24h", "3d", "7d", "14d"] as const;
+export const DURATION_OPTIONS = [
+  "1h",
+  "6h",
+  "12h",
+  "24h",
+  "3d",
+  "7d",
+  "14d",
+] as const;
 
 export const GRID_DIMENSIONS = {
   ROWS: 24,
@@ -26,23 +35,41 @@ const API_BASE = "https://traffic-worker.mangalaman93.workers.dev";
  * @throws Error if parameters are invalid
  */
 const buildHistoryUrl = (x: number, y: number, duration: string): string => {
-  // Validate x coordinate (must be integer between 0 and GRID_DIMENSIONS.COLS-1)
+  // Validate x coordinate (must be integer between 0 and
+  // GRID_DIMENSIONS.COLS-1)
   if (!Number.isInteger(x) || x < 0 || x > GRID_DIMENSIONS.COLS - 1) {
-    throw new Error(`Invalid x coordinate: ${x}. Must be an integer between 0 and ${GRID_DIMENSIONS.COLS - 1}.`);
+    throw new Error(
+      `Invalid x coordinate: ${x}. Must be an integer between 0 and ${
+        GRID_DIMENSIONS.COLS - 1
+      }.`,
+    );
   }
 
-  // Validate y coordinate (must be integer between 0 and GRID_DIMENSIONS.ROWS-1)
+  // Validate y coordinate (must be integer between 0 and
+  // GRID_DIMENSIONS.ROWS-1)
   if (!Number.isInteger(y) || y < 0 || y > GRID_DIMENSIONS.ROWS - 1) {
-    throw new Error(`Invalid y coordinate: ${y}. Must be an integer between 0 and ${GRID_DIMENSIONS.ROWS - 1}.`);
+    throw new Error(
+      `Invalid y coordinate: ${y}. Must be an integer between 0 and ${
+        GRID_DIMENSIONS.ROWS - 1
+      }.`,
+    );
   }
 
   // Validate duration against whitelist
-  if (!DURATION_OPTIONS.includes(duration as typeof DURATION_OPTIONS[number])) {
-    throw new Error(`Invalid duration: ${duration}. Must be one of: ${DURATION_OPTIONS.join(', ')}`);
+  if (
+    !DURATION_OPTIONS.includes(duration as (typeof DURATION_OPTIONS)[number])
+  ) {
+    throw new Error(
+      `Invalid duration: ${duration}. Must be one of: ${DURATION_OPTIONS.join(
+        ", ",
+      )}`,
+    );
   }
 
   // Use encodeURIComponent for all user-controlled values
-  return `${API_BASE}/history?x=${encodeURIComponent(x)}&y=${encodeURIComponent(y)}&duration=${encodeURIComponent(duration)}`;
+  return `${API_BASE}/history?x=${encodeURIComponent(
+    x,
+  )}&y=${encodeURIComponent(y)}&duration=${encodeURIComponent(duration)}`;
 };
 
 export const API_ENDPOINTS = {
@@ -51,6 +78,7 @@ export const API_ENDPOINTS = {
   HISTORY: buildHistoryUrl,
 } as const;
 
-export const GOOGLE_MAPS_URL = "https://www.google.com/maps/d/edit?mid=1AW5K34KiZmKo32vtBsmOnzNSU45oQS4";
+export const GOOGLE_MAPS_URL =
+  "https://www.google.com/maps/d/edit?mid=1AW5K34KiZmKo32vtBsmOnzNSU45oQS4";
 
 export const TIMEZONE = "Asia/Kolkata" as const;

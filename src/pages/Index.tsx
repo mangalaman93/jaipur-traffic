@@ -4,10 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { TrafficAreaCard } from "@/components/TrafficAreaCard";
 import { TrafficData } from "@/lib/types";
-import { validateCurrentTrafficData, validateSustainedTrafficData } from "@/lib/validation";
+import {
+  validateCurrentTrafficData,
+  validateSustainedTrafficData,
+} from "@/lib/validation";
 import { Activity, BarChart3, Clock } from "lucide-react";
 import { parseISTTimestamp } from "@/lib/timeUtils";
-import { calculateSeverityDifferences, calculateTotalTraffic } from "@/lib/trafficUtils";
+import {
+  calculateSeverityDifferences,
+  calculateTotalTraffic,
+} from "@/lib/trafficUtils";
 import { cn } from "@/lib/cn";
 import {
   TRAFFIC_SEVERITY_COLORS,
@@ -18,15 +24,19 @@ import {
 
 // Lazy loaded components
 const FullTrafficGrid = lazy(() =>
-  import("@/components/FullTrafficGrid").then(m => ({
+  import("@/components/FullTrafficGrid").then((m) => ({
     default: m.FullTrafficGrid,
-  }))
+  })),
 );
 
-const StatsBar = lazy(() => import("@/components/StatsBar").then(m => ({ default: m.StatsBar })));
+const StatsBar = lazy(() =>
+  import("@/components/StatsBar").then((m) => ({ default: m.StatsBar })),
+);
 
 // Utility functions
-const getSeverityLevel = (cell: TrafficData): "high" | "moderate" | "normal" => {
+const getSeverityLevel = (
+  cell: TrafficData,
+): "high" | "moderate" | "normal" => {
   if (!cell.latest_severity || !cell.p95 || !cell.p99) return "normal";
 
   if (cell.latest_severity > cell.p99!) return "high";
@@ -38,8 +48,8 @@ const getTopSeverityAreas = (currentData: TrafficData[]): TrafficData[] => {
   if (!currentData) return [];
 
   const processedData = currentData
-    .filter(cell => cell.latest_severity && cell.p95 && cell.p99)
-    .map(cell => {
+    .filter((cell) => cell.latest_severity && cell.p95 && cell.p99)
+    .map((cell) => {
       const { p95Diff, p99Diff } = calculateSeverityDifferences(cell);
       return {
         ...cell,
@@ -50,7 +60,7 @@ const getTopSeverityAreas = (currentData: TrafficData[]): TrafficData[] => {
     });
 
   const p99Cells = processedData
-    .filter(cell => cell.p99Diff > 0)
+    .filter((cell) => cell.p99Diff > 0)
     .sort((a, b) => b.p99Diff - a.p99Diff)
     .slice(0, 10);
 
@@ -59,7 +69,7 @@ const getTopSeverityAreas = (currentData: TrafficData[]): TrafficData[] => {
   }
 
   const p95Cells = processedData
-    .filter(cell => cell.p95Diff > 0 && cell.p99Diff <= 0)
+    .filter((cell) => cell.p95Diff > 0 && cell.p99Diff <= 0)
     .sort((a, b) => b.p95Diff - a.p95Diff)
     .slice(0, 10 - p99Cells.length);
 
@@ -70,7 +80,7 @@ const getTopCongestedAreas = (currentData: TrafficData[]): TrafficData[] => {
   if (!currentData) return [];
 
   return currentData
-    .filter(cell => calculateTotalTraffic(cell) > 0)
+    .filter((cell) => calculateTotalTraffic(cell) > 0)
     .sort((a, b) => calculateTotalTraffic(b) - calculateTotalTraffic(a))
     .slice(0, 10);
 };
@@ -79,7 +89,10 @@ const getLastUpdated = (currentData: TrafficData[] | undefined): Date => {
   if (!currentData || currentData.length === 0) return new Date();
 
   return parseISTTimestamp(
-    currentData.reduce((max, d) => (new Date(d.ts) > new Date(max.ts) ? d : max), currentData[0]).ts
+    currentData.reduce(
+      (max, d) => (new Date(d.ts) > new Date(max.ts) ? d : max),
+      currentData[0],
+    ).ts,
   );
 };
 
@@ -149,7 +162,9 @@ const TabContent = ({
   setSelectedCell,
 }: TabContentProps) => (
   <div className="space-y-4">
-    <Suspense fallback={<div className="h-12 bg-muted/20 animate-pulse rounded-lg" />}>
+    <Suspense
+      fallback={<div className="h-12 bg-muted/20 animate-pulse rounded-lg" />}
+    >
       <div className="mb-3">
         <StatsBar data={data} mode={mode} />
       </div>
@@ -198,8 +213,14 @@ export default function Index() {
     },
   });
 
-  const topSeverityAreas = useMemo(() => getTopSeverityAreas(currentData || []), [currentData]);
-  const topCongestedAreas = useMemo(() => getTopCongestedAreas(currentData || []), [currentData]);
+  const topSeverityAreas = useMemo(
+    () => getTopSeverityAreas(currentData || []),
+    [currentData],
+  );
+  const topCongestedAreas = useMemo(
+    () => getTopCongestedAreas(currentData || []),
+    [currentData],
+  );
 
   const lastUpdated = useMemo(() => getLastUpdated(currentData), [currentData]);
 

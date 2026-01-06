@@ -5,7 +5,9 @@ interface DailyAverageTrafficProps {
   historicalData: TrafficData[];
 }
 
-export function DailyAverageTraffic({ historicalData }: DailyAverageTrafficProps) {
+export function DailyAverageTraffic({
+  historicalData,
+}: DailyAverageTrafficProps) {
   // Group data by day and calculate daily averages
   const dailyAverages = historicalData.reduce(
     (acc, point) => {
@@ -19,12 +21,12 @@ export function DailyAverageTraffic({ historicalData }: DailyAverageTrafficProps
       acc[date].count += 1;
       return acc;
     },
-    {} as Record<string, { total: number; count: number; date: string }>
+    {} as Record<string, { total: number; count: number; date: string }>,
   );
 
   // Convert to array and sort by date (oldest to latest)
   const sortedDays = Object.values(dailyAverages)
-    .map(day => ({
+    .map((day) => ({
       date: new Date(day.date).toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -45,7 +47,9 @@ export function DailyAverageTraffic({ historicalData }: DailyAverageTrafficProps
       >
         {sortedDays.map((day, index) => (
           <div key={`date-${index}`} className="text-center">
-            <span className="text-xs font-medium text-muted-foreground">{day.date}</span>
+            <span className="text-xs font-medium text-muted-foreground">
+              {day.date}
+            </span>
           </div>
         ))}
       </div>
@@ -61,7 +65,9 @@ export function DailyAverageTraffic({ historicalData }: DailyAverageTrafficProps
             key={`value-${index}`}
             className="text-center p-2 rounded bg-muted/20 border border-border/50"
           >
-            <span className="text-sm font-bold text-foreground">{day.average}</span>
+            <span className="text-sm font-bold text-foreground">
+              {day.average}
+            </span>
           </div>
         ))}
       </div>

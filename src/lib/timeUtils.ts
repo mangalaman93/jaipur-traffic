@@ -29,10 +29,12 @@ export function getHoursAgo(date: Date): string {
   const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
 
   if (diffInMinutes === 0) return "Just now";
-  if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes === 1 ? '' : 's'} ago`;
+  if (diffInMinutes < 60)
+    return `${diffInMinutes} minute${diffInMinutes === 1 ? "" : "s"} ago`;
   if (diffInHours < 24) {
     const remainingMinutes = diffInMinutes % 60;
-    if (remainingMinutes === 0) return `${diffInHours} hour${diffInHours === 1 ? '' : 's'} ago`;
+    if (remainingMinutes === 0)
+      return `${diffInHours} hour${diffInHours === 1 ? "" : "s"} ago`;
     return `${diffInHours}h ${remainingMinutes}m ago`;
   }
 

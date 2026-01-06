@@ -13,14 +13,14 @@ export function DurationSelector({
   return (
     <select
       value={selectedDuration}
-      onChange={e => onDurationChange?.(e.target.value)}
+      onChange={(e) => onDurationChange?.(e.target.value)}
       className={cn(
         "px-3 py-1 text-sm bg-background border border-border rounded-md",
         "focus:outline-none focus:ring-2 focus:ring-primary",
-        "focus:border-transparent cursor-pointer"
+        "focus:border-transparent cursor-pointer",
       )}
     >
-      {DURATION_OPTIONS.map(duration => (
+      {DURATION_OPTIONS.map((duration) => (
         <option key={duration} value={duration}>
           {duration}
         </option>

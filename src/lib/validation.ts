@@ -2,8 +2,16 @@ import { z } from "zod";
 import { GRID_DIMENSIONS } from "./constants";
 
 // Create reusable coordinate validation schemas
-const xCoordinateSchema = z.number().int().min(0).max(GRID_DIMENSIONS.COLS - 1);
-const yCoordinateSchema = z.number().int().min(0).max(GRID_DIMENSIONS.ROWS - 1);
+const xCoordinateSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(GRID_DIMENSIONS.COLS - 1);
+const yCoordinateSchema = z
+  .number()
+  .int()
+  .min(0)
+  .max(GRID_DIMENSIONS.ROWS - 1);
 
 // Schema for historical traffic data API responses
 export const HistoricalTrafficDataSchema = z.object({
@@ -50,20 +58,32 @@ export const SustainedTrafficDataSchema = z.object({
 
 // Array schemas for validation
 export const CurrentTrafficDataArraySchema = z.array(CurrentTrafficDataSchema);
-export const SustainedTrafficDataArraySchema = z.array(SustainedTrafficDataSchema);
-export const HistoricalTrafficDataArraySchema = z.array(HistoricalTrafficDataSchema);
+export const SustainedTrafficDataArraySchema = z.array(
+  SustainedTrafficDataSchema,
+);
+export const HistoricalTrafficDataArraySchema = z.array(
+  HistoricalTrafficDataSchema,
+);
 
 // Type inference from schemas
-export type ValidatedCurrentTrafficData = z.infer<typeof CurrentTrafficDataSchema>;
-export type ValidatedSustainedTrafficData = z.infer<typeof SustainedTrafficDataSchema>;
-export type ValidatedHistoricalTrafficData = z.infer<typeof HistoricalTrafficDataSchema>;
+export type ValidatedCurrentTrafficData = z.infer<
+  typeof CurrentTrafficDataSchema
+>;
+export type ValidatedSustainedTrafficData = z.infer<
+  typeof SustainedTrafficDataSchema
+>;
+export type ValidatedHistoricalTrafficData = z.infer<
+  typeof HistoricalTrafficDataSchema
+>;
 export type ValidatedTrafficData = ValidatedCurrentTrafficData;
 
 /**
  * Validates current traffic data array from API response
  * @throws Error if validation fails
  */
-export function validateCurrentTrafficData(data: unknown): ValidatedCurrentTrafficData[] {
+export function validateCurrentTrafficData(
+  data: unknown,
+): ValidatedCurrentTrafficData[] {
   try {
     return CurrentTrafficDataArraySchema.parse(data);
   } catch (error) {
@@ -76,7 +96,9 @@ export function validateCurrentTrafficData(data: unknown): ValidatedCurrentTraff
  * Validates historical traffic data array from API response
  * @throws Error if validation fails
  */
-export function validateHistoricalTrafficData(data: unknown): ValidatedHistoricalTrafficData[] {
+export function validateHistoricalTrafficData(
+  data: unknown,
+): ValidatedHistoricalTrafficData[] {
   try {
     return HistoricalTrafficDataArraySchema.parse(data);
   } catch (error) {
@@ -89,7 +111,9 @@ export function validateHistoricalTrafficData(data: unknown): ValidatedHistorica
  * Validates sustained traffic data array from API response
  * @throws Error if validation fails
  */
-export function validateSustainedTrafficData(data: unknown): ValidatedSustainedTrafficData[] {
+export function validateSustainedTrafficData(
+  data: unknown,
+): ValidatedSustainedTrafficData[] {
   try {
     return SustainedTrafficDataArraySchema.parse(data);
   } catch (error) {

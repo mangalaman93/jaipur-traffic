@@ -8,7 +8,12 @@ import { GOOGLE_MAPS_URL } from "@/lib/constants";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MapIcon = () => (
-  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <svg
+    className="w-3 h-3"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
     <path
       strokeLinecap="round"
       strokeLinejoin="round"
@@ -56,7 +61,7 @@ export function DashboardHeader({
                   className={cn(
                     "inline-flex items-center gap-1 px-1.5 py-1 text-xs sm:px-2",
                     "bg-primary/10 text-primary rounded-md",
-                    "hover:bg-primary/20 transition-colors"
+                    "hover:bg-primary/20 transition-colors",
                   )}
                 >
                   <MapIcon />
@@ -64,21 +69,27 @@ export function DashboardHeader({
                   <span className="sm:hidden">Grid</span>
                 </a>
               </div>
-              <p className="text-xs text-muted-foreground">Real-time grid analysis</p>
+              <p className="text-xs text-muted-foreground">
+                Real-time grid analysis
+              </p>
             </div>
           </div>
 
           {/* Middle: Tabs */}
           {activeTab && onTabChange && (
             <div className="flex justify-center sm:hidden">
-              <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+              <Tabs
+                value={activeTab}
+                onValueChange={onTabChange}
+                className="w-full"
+              >
                 <TabsList className="grid w-full max-w-md grid-cols-3 h-auto p-1">
                   <TabsTrigger
                     value="traffic"
                     className={cn(
                       "gap-1 flex items-center",
                       "px-2 py-1.5",
-                      "text-xs font-medium"
+                      "text-xs font-medium",
                     )}
                   >
                     <Activity className="w-3.5 h-3.5 flex-shrink-0" />
@@ -89,7 +100,7 @@ export function DashboardHeader({
                     className={cn(
                       "gap-1 flex items-center",
                       "px-2 py-1.5",
-                      "text-xs font-medium"
+                      "text-xs font-medium",
                     )}
                   >
                     <BarChart3 className="w-3.5 h-3.5 flex-shrink-0" />
@@ -100,7 +111,7 @@ export function DashboardHeader({
                     className={cn(
                       "gap-1 flex items-center",
                       "px-2 py-1.5",
-                      "text-xs font-medium"
+                      "text-xs font-medium",
                     )}
                   >
                     <Clock className="w-3.5 h-3.5 flex-shrink-0" />
@@ -114,14 +125,18 @@ export function DashboardHeader({
           {/* Desktop tabs (hidden on mobile) */}
           {activeTab && onTabChange && (
             <div className="hidden sm:flex justify-center">
-              <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+              <Tabs
+                value={activeTab}
+                onValueChange={onTabChange}
+                className="w-full"
+              >
                 <TabsList className="grid w-full max-w-md grid-cols-3 h-auto p-1">
                   <TabsTrigger
                     value="traffic"
                     className={cn(
                       "gap-1 flex items-center",
                       "px-2 py-1.5",
-                      "text-xs font-medium"
+                      "text-xs font-medium",
                     )}
                   >
                     <Activity className="w-3.5 h-3.5 flex-shrink-0" />
@@ -132,7 +147,7 @@ export function DashboardHeader({
                     className={cn(
                       "gap-1 flex items-center",
                       "px-2 py-1.5",
-                      "text-xs font-medium"
+                      "text-xs font-medium",
                     )}
                   >
                     <BarChart3 className="w-3.5 h-3.5 flex-shrink-0" />
@@ -143,7 +158,7 @@ export function DashboardHeader({
                     className={cn(
                       "gap-1 flex items-center",
                       "px-2 py-1.5",
-                      "text-xs font-medium"
+                      "text-xs font-medium",
                     )}
                   >
                     <Clock className="w-3.5 h-3.5 flex-shrink-0" />

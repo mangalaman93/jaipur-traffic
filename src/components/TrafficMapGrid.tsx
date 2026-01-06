@@ -33,7 +33,7 @@ function getCellColor(
   if (!cell) {
     return {
       fillColor: "#f1f5f9",
-      fillOpacity: 0.3,
+      fillOpacity: 0.15,
     };
   }
 
@@ -45,18 +45,18 @@ function getCellColor(
     if (p99Diff > 0) {
       return {
         fillColor: "#dc2626",
-        fillOpacity: isTop10 ? 0.7 : 0.5,
+        fillOpacity: isTop10 ? 0.35 : 0.25,
       };
     }
     if (p95Diff > 0) {
       return {
         fillColor: "#ca8a04",
-        fillOpacity: isTop10 ? 0.7 : 0.5,
+        fillOpacity: isTop10 ? 0.35 : 0.25,
       };
     }
     return {
       fillColor: "#f1f5f9",
-      fillOpacity: 0.3,
+      fillOpacity: 0.15,
     };
   }
 
@@ -64,32 +64,32 @@ function getCellColor(
   if (total === 0) {
     return {
       fillColor: "#f1f5f9",
-      fillOpacity: 0.3,
+      fillOpacity: 0.15,
     };
   }
 
   if (cell.dark_red > 0) {
     return {
       fillColor: "#7f1d1d",
-      fillOpacity: isTop10 ? 0.8 : 0.6,
+      fillOpacity: isTop10 ? 0.4 : 0.3,
     };
   }
   if (cell.red > 0) {
     return {
       fillColor: "#dc2626",
-      fillOpacity: isTop10 ? 0.7 : 0.5,
+      fillOpacity: isTop10 ? 0.35 : 0.25,
     };
   }
   if (cell.yellow > 0) {
     return {
       fillColor: "#eab308",
-      fillOpacity: isTop10 ? 0.7 : 0.5,
+      fillOpacity: isTop10 ? 0.35 : 0.25,
     };
   }
 
   return {
     fillColor: "#f1f5f9",
-    fillOpacity: 0.3,
+    fillOpacity: 0.15,
   };
 }
 
@@ -137,7 +137,7 @@ export function TrafficMapGrid({
     }).addTo(mapInstance);
 
     // Add CSS for rounded corners, grid numbers, and modal z-index
-    const style = document.createElement('style');
+    const style = document.createElement("style");
     style.textContent = `
       .grid-cell svg path {
         rx: 3px !important;
@@ -186,10 +186,9 @@ export function TrafficMapGrid({
 
     // Clear existing rectangles and numbers
     mapInstance.eachLayer((layer) => {
-      const layerWithCustomOptions =
-        layer as L.Layer & {
-          options?: { className?: string };
-        };
+      const layerWithCustomOptions = layer as L.Layer & {
+        options?: { className?: string };
+      };
       if (
         layerWithCustomOptions.options?.className === "grid-cell" ||
         layerWithCustomOptions.options?.className === "grid-number"
@@ -220,10 +219,10 @@ export function TrafficMapGrid({
         });
 
         // Apply rounded corners via CSS
-        rect.on('add', function() {
+        rect.on("add", function () {
           const element = this.getElement();
           if (element) {
-            element.style.borderRadius = '4px';
+            element.style.borderRadius = "4px";
           }
         });
 
@@ -231,12 +230,12 @@ export function TrafficMapGrid({
         if (isTop10) {
           const rank = Array.from(top10Cells).indexOf(cellKey) + 1;
           const center = rect.getBounds().getCenter();
-          
+
           // Create a custom div icon for the number using theme colors
           const numberIcon = L.divIcon({
             html: `<div style="
-              background: hsl(var(--primary)) !important;
-              color: hsl(var(--primary-foreground)) !important;
+              background: transparent !important;
+              color: hsl(var(--primary)) !important;
               border-radius: 50% !important;
               width: 24px !important;
               height: 24px !important;
@@ -245,21 +244,25 @@ export function TrafficMapGrid({
               justify-content: center !important;
               font-size: 12px !important;
               font-weight: bold !important;
-              box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+              box-shadow: none !important;
               pointer-events: none !important;
               position: absolute !important;
               left: 50% !important;
               top: 50% !important;
               transform: translate(-50%, -50%) !important;
               z-index: 1000 !important;
-              border: 2px solid hsl(var(--primary-foreground)) !important;
+              border: 2px solid hsl(var(--primary)) !important;
               font-family: system-ui, -apple-system, sans-serif !important;
+              text-shadow: 1px 1px 2px rgba(255,255,255,0.8),
+                           -1px -1px 2px rgba(255,255,255,0.8),
+                           1px -1px 2px rgba(255,255,255,0.8),
+                           -1px 1px 2px rgba(255,255,255,0.8) !important;
             ">${rank}</div>`,
             className: "grid-number",
             iconSize: [1, 1], // Minimal size since we're positioning absolutely
             iconAnchor: [0.5, 0.5],
           });
-          
+
           const numberMarker = L.marker(center, { icon: numberIcon });
           numberMarker.setZIndexOffset(1000);
           numberMarker.addTo(mapInstance);

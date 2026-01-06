@@ -15,7 +15,8 @@ export function StatsBar({ data, mode = "traffic" }: StatsBarProps) {
       ? {
           total: data.length,
           high: data.filter((d) => getSeverityLevel(d) === "high").length,
-          moderate: data.filter((d) => getSeverityLevel(d) === "moderate").length,
+          moderate: data.filter((d) => getSeverityLevel(d) === "moderate")
+            .length,
           normal: data.filter((d) => getSeverityLevel(d) === "normal").length,
         }
       : {
@@ -23,7 +24,7 @@ export function StatsBar({ data, mode = "traffic" }: StatsBarProps) {
           critical: data.filter((d) => d.dark_red > 0).length,
           high: data.filter((d) => d.red > 0 && d.dark_red === 0).length,
           moderate: data.filter(
-            (d) => d.yellow > 0 && d.red === 0 && d.dark_red === 0
+            (d) => d.yellow > 0 && d.red === 0 && d.dark_red === 0,
           ).length,
         };
 

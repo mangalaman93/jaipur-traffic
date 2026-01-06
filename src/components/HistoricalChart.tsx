@@ -47,7 +47,9 @@ export function HistoricalChart({
     });
 
     const startTime = formatRangeTime(parseISTTimestamp(sortedData[0].ts));
-    const endTime = formatRangeTime(parseISTTimestamp(sortedData[sortedData.length - 1].ts));
+    const endTime = formatRangeTime(
+      parseISTTimestamp(sortedData[sortedData.length - 1].ts),
+    );
 
     return `${startTime} - ${endTime}`;
   };
@@ -57,10 +59,12 @@ export function HistoricalChart({
       <div
         className={cn(
           "h-96 flex items-center justify-center",
-          "bg-muted/20 rounded-lg border border-border/50"
+          "bg-muted/20 rounded-lg border border-border/50",
         )}
       >
-        <div className="text-sm text-muted-foreground">Loading historical data...</div>
+        <div className="text-sm text-muted-foreground">
+          Loading historical data...
+        </div>
       </div>
     );
   }
@@ -70,10 +74,12 @@ export function HistoricalChart({
       <div
         className={cn(
           "h-96 flex items-center justify-center",
-          "bg-muted/20 rounded-lg border border-border/50"
+          "bg-muted/20 rounded-lg border border-border/50",
         )}
       >
-        <div className="text-sm text-muted-foreground">No historical data available</div>
+        <div className="text-sm text-muted-foreground">
+          No historical data available
+        </div>
       </div>
     );
   }
@@ -88,14 +94,14 @@ export function HistoricalChart({
         <div className="flex items-center gap-3">
           <select
             value={selectedMetric}
-            onChange={e => setSelectedMetric(e.target.value as MetricType)}
+            onChange={(e) => setSelectedMetric(e.target.value as MetricType)}
             className={cn(
               "px-3 py-1 text-sm bg-background border border-border rounded-md",
               "focus:outline-none focus:ring-2 focus:ring-primary",
-              "focus:border-transparent cursor-pointer"
+              "focus:border-transparent cursor-pointer",
             )}
           >
-            {METRIC_CONFIG.map(option => (
+            {METRIC_CONFIG.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
@@ -113,8 +119,15 @@ export function HistoricalChart({
 
       <div className="h-96 bg-muted/20 rounded-lg border border-border/50 p-4">
         <ResponsiveContainer width="100%" height={340}>
-          <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+          <LineChart
+            data={chartData}
+            margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="currentColor"
+              strokeOpacity={0.1}
+            />
             <XAxis
               dataKey="timestamp"
               stroke="currentColor"
@@ -124,7 +137,7 @@ export function HistoricalChart({
               type="number"
               domain={["dataMin", "dataMax"]}
               scale="time"
-              tickFormatter={value => formatChartTime(new Date(value))}
+              tickFormatter={(value) => formatChartTime(new Date(value))}
               interval="preserveStartEnd"
             />
             <YAxis
@@ -140,7 +153,7 @@ export function HistoricalChart({
               wrapperStyle={{ fontSize: "12px", paddingBottom: "5px" }}
             />
 
-            {chartLines.map(line => (
+            {chartLines.map((line) => (
               <Line
                 key={line.dataKey}
                 type="monotone"
