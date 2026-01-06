@@ -145,15 +145,11 @@ const TopAreasList = ({
 interface TabContentProps {
   data: TrafficData[];
   mode?: "traffic" | "severity";
-  highlightTop10?: boolean;
-  activeTab?: string;
 }
 
 const TabContent = ({
   data,
   mode,
-  highlightTop10,
-  activeTab,
 }: TabContentProps) => (
   <div className="space-y-4">
     <Suspense
@@ -231,8 +227,7 @@ export default function Index() {
           <TabsContent value="traffic">
             <TabContent
               data={currentData || []}
-              highlightTop10={true}
-              activeTab={activeTab}
+              mode="traffic"
             />
             <Suspense
               fallback={
@@ -249,11 +244,8 @@ export default function Index() {
             >
               <FullTrafficGrid
                 data={currentData || []}
-                rows={GRID_DIMENSIONS.ROWS}
-                cols={GRID_DIMENSIONS.COLS}
                 mode="traffic"
                 highlightTop10={true}
-                activeTab={activeTab}
                 topAreasList={
                   <TopAreasList
                     areas={topCongestedAreas}
@@ -272,8 +264,6 @@ export default function Index() {
             <TabContent
               data={currentData || []}
               mode="severity"
-              highlightTop10={true}
-              activeTab={activeTab}
             />
             <Suspense
               fallback={
@@ -290,11 +280,8 @@ export default function Index() {
             >
               <FullTrafficGrid
                 data={currentData || []}
-                rows={GRID_DIMENSIONS.ROWS}
-                cols={GRID_DIMENSIONS.COLS}
                 mode="severity"
                 highlightTop10={true}
-                activeTab={activeTab}
                 topAreasList={
                   <TopAreasList
                     areas={topSeverityAreas}
@@ -312,8 +299,6 @@ export default function Index() {
           <TabsContent value="sustained">
             <TabContent
               data={sustainedData || []}
-              highlightTop10={true}
-              activeTab={activeTab}
             />
             <Suspense
               fallback={
@@ -330,10 +315,7 @@ export default function Index() {
             >
               <FullTrafficGrid
                 data={sustainedData || []}
-                rows={GRID_DIMENSIONS.ROWS}
-                cols={GRID_DIMENSIONS.COLS}
                 highlightTop10={true}
-                activeTab={activeTab}
                 topAreasList={
                   <TopAreasList
                     areas={(sustainedData || []).slice(0, 10)}

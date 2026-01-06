@@ -2,10 +2,7 @@ import React from "react";
 import { TrafficData } from "@/lib/types";
 import { cn } from "@/lib/cn";
 import { getCellCenter, getGoogleMapsUrl } from "@/lib/gridBoundaries";
-import {
-  calculateTotalTraffic,
-  getTrafficSeverityLevel,
-} from "@/lib/trafficUtils";
+import { getTrafficSeverityLevel } from "@/lib/trafficUtils";
 
 interface TrafficAreaCardProps {
   cell: TrafficData & { severityLevel?: string };

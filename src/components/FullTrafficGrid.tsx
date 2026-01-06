@@ -3,7 +3,6 @@ import { cn } from "@/lib/cn";
 import { TrafficData } from "@/lib/types";
 import { TrafficMapGrid } from "@/components/TrafficMapGrid";
 import { TrafficLegend } from "@/components/TrafficLegend";
-import { GRID_DIMENSIONS } from "@/lib/constants";
 import {
   createCellKey,
   getTop10SeverityCells,
@@ -13,21 +12,15 @@ import { calculateTotalTraffic } from "@/lib/trafficUtils";
 
 interface FullTrafficGridProps {
   data: TrafficData[];
-  rows?: number;
-  cols?: number;
   mode?: "traffic" | "severity";
   highlightTop10?: boolean;
-  activeTab?: string;
   topAreasList?: React.ReactNode;
 }
 
 export function FullTrafficGrid({
   data,
-  rows = GRID_DIMENSIONS.ROWS,
-  cols = GRID_DIMENSIONS.COLS,
   mode = "traffic",
   highlightTop10 = false,
-  activeTab = "traffic",
   topAreasList,
 }: FullTrafficGridProps) {
   // Computed values
