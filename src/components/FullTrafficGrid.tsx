@@ -4,17 +4,15 @@ import { cn } from "@/lib/cn";
 import { TrafficData } from "@/lib/types";
 import { validateHistoricalTrafficData } from "@/lib/validation";
 import { parseISTTimestamp, getHoursAgo } from "@/lib/timeUtils";
-import { getCellCenterCoordinates, getGoogleMapsUrl } from "@/lib/coordinateUtils";
-import { calculateSeverityDifferences, calculateTotalTraffic } from "@/lib/trafficUtils";
+import { getCellCenter, getGoogleMapsUrl } from "@/lib/gridBoundaries";
 import { formatRangeTime } from "@/lib/timeFormat";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HistoricalChart } from "@/components/HistoricalChart";
-import { GridCell } from "@/components/GridCell";
+import { TrafficMapGrid } from "@/components/TrafficMapGrid";
 import { TrafficLegend } from "@/components/TrafficLegend";
 import { DailyAverageTraffic } from "@/components/DailyAverageTraffic";
 import { SeverityInfo } from "@/components/SeverityInfo";
 import { GRID_DIMENSIONS, API_ENDPOINTS, DURATION_OPTIONS } from "@/lib/constants";
-import { useRowHeight } from "@/lib/useRowHeight";
 import {
   createCellKey,
   createDefaultCell,
@@ -32,8 +30,6 @@ interface FullTrafficGridProps {
   activeTab?: string;
   onDialogClose?: () => void;
 }
-
-const GRID_ASPECT_RATIO = GRID_DIMENSIONS.ASPECT_RATIO;
 
 export function FullTrafficGrid({
   data,
@@ -53,11 +49,7 @@ export function FullTrafficGrid({
   } | null>(initialSelectedCell ? { x: initialSelectedCell.x, y: initialSelectedCell.y } : null);
   const [selectedDuration, setSelectedDuration] = useState<string>(DURATION_OPTIONS[3]);
 
-  // Refs
-  const gridContainerRef = React.useRef<HTMLDivElement>(null);
-
   // Computed values
-  const rowHeight = useRowHeight(gridContainerRef, rows);
   const dataMap = useMemo(() => {
     const map = new Map<string, TrafficData>();
     data.forEach(item => {
@@ -70,19 +62,6 @@ export function FullTrafficGrid({
     if (!highlightTop10) return new Set<string>();
     return mode === "severity" ? getTop10SeverityCells(data) : getTop10TrafficCells(data);
   }, [data, highlightTop10, mode]);
-
-  const gridStyles = {
-    headerGrid: {
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-    },
-    mainGrid: {
-      gridTemplateColumns: `repeat(${cols}, 1fr)`,
-      gridTemplateRows: `repeat(${rows}, 1fr)`,
-    },
-    aspectRatio: {
-      aspectRatio: GRID_ASPECT_RATIO,
-    },
-  };
 
   // Sync with parent state
   React.useEffect(() => {
@@ -103,8 +82,8 @@ export function FullTrafficGrid({
       if (!response.ok) {
         throw new Error("Failed to fetch historical data");
       }
-      const data = await response.json();
-      return validateHistoricalTrafficData(data) as TrafficData[];
+      const jsonData = await response.json();
+      return validateHistoricalTrafficData(jsonData) as TrafficData[];
     },
     enabled: !!selectedCoords,
   });
@@ -125,95 +104,18 @@ export function FullTrafficGrid({
   return (
     <>
       <div className="space-y-4">
-        <div className="overflow-x-auto">
-          <div className="flex">
-            {/* Row labels column */}
-            <div className="flex flex-col">
-              <div
-                className={cn(
-                  "w-8 border border-border rounded-tl-lg",
-                  "flex items-center justify-center",
-                  "text-xs font-mono text-muted-foreground"
-                )}
-                style={{ height: rowHeight }}
-              />
-              {/* Empty corner - top-left rounded */}
-              {Array.from({ length: rows }, (_, row) => (
-                <div
-                  key={`row-label-${row}`}
-                  className={cn(
-                    "flex items-center justify-center",
-                    "text-xs font-mono text-muted-foreground",
-                    "w-8 h-12 border-l border-b border-border",
-                    row === rows - 1 && "border-l border-b border-r rounded-bl-lg"
-                  )}
-                  style={{ height: rowHeight }}
-                >
-                  {row}
-                </div>
-              ))}
-            </div>
-
-            {/* Header row with column numbers */}
-            <div className="flex-1">
-              <div className="border border-border overflow-hidden rounded-tr-lg">
-                <div className="grid gap-0 bg-card" style={gridStyles.headerGrid}>
-                  {Array.from({ length: cols }, (_, col) => (
-                    <div
-                      key={`header-${col}`}
-                      className={cn(
-                        "flex items-center justify-center",
-                        "text-xs font-mono text-muted-foreground",
-                        "px-1 border border-border"
-                      )}
-                      style={{ height: rowHeight }}
-                    >
-                      {col}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Grid with background image and proper aspect ratio */}
-              <div
-                ref={gridContainerRef}
-                className={cn(
-                  "relative bg-cover bg-center bg-no-repeat",
-                  "rounded-br-lg overflow-hidden",
-                  "border border-border border-t-0"
-                )}
-                style={{
-                  backgroundImage: "url(/data/jaipur.jpg)",
-                  ...gridStyles.aspectRatio,
-                }}
-              >
-                <div className="absolute inset-0 grid gap-1" style={gridStyles.mainGrid}>
-                  {Array.from({ length: rows }, (_, row) => (
-                    <React.Fragment key={`row-${row}`}>
-                      {Array.from({ length: cols }, (_, col) => {
-                        const cell = dataMap.get(`${col}-${row}`);
-                        const cellKey = `${col}-${row}`;
-                        const isTop10 = highlightTop10 && top10Cells.has(cellKey);
-
-                        return (
-                          <GridCell
-                            key={cellKey}
-                            cell={cell}
-                            col={col}
-                            row={row}
-                            mode={mode}
-                            isTop10={isTop10}
-                            top10Cells={top10Cells}
-                            onCellClick={handleCellClick}
-                          />
-                        );
-                      })}
-                    </React.Fragment>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* OpenStreetMap Grid */}
+        <div 
+          className="rounded-lg overflow-hidden border border-border"
+          style={{ height: "500px" }}
+        >
+          <TrafficMapGrid
+            data={data}
+            mode={mode}
+            highlightTop10={highlightTop10}
+            top10Cells={top10Cells}
+            onCellClick={handleCellClick}
+          />
         </div>
 
         {/* Legend */}
@@ -262,10 +164,10 @@ export function FullTrafficGrid({
               </div>
               {selectedCoords && (
                 <a
-                  href={getGoogleMapsUrl(
-                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y).lat,
-                    getCellCenterCoordinates(selectedCoords.x, selectedCoords.y).lng
-                  )}
+                  href={(() => {
+                    const center = getCellCenter(selectedCoords.x, selectedCoords.y);
+                    return getGoogleMapsUrl(center.lat, center.lng);
+                  })()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
