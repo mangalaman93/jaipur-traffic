@@ -30,11 +30,15 @@ interface DashboardHeaderProps {
   onTabChange?: (tab: string) => void;
 }
 
-export function DashboardHeader({ lastUpdated, activeTab, onTabChange }: DashboardHeaderProps) {
+export function DashboardHeader({
+  lastUpdated,
+  activeTab,
+  onTabChange,
+}: DashboardHeaderProps) {
   return (
     <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-10">
       <div className="container py-2">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
           {/* Left side: Title */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -42,19 +46,22 @@ export function DashboardHeader({ lastUpdated, activeTab, onTabChange }: Dashboa
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-foreground">Jaipur Traffic Monitor</h1>
+                <h1 className="text-lg font-semibold text-foreground">
+                  Jaipur Traffic Monitor
+                </h1>
                 <a
                   href={GOOGLE_MAPS_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
-                    "inline-flex items-center gap-1 px-2 py-1 text-xs",
+                    "inline-flex items-center gap-1 px-1.5 py-1 text-xs sm:px-2",
                     "bg-primary/10 text-primary rounded-md",
                     "hover:bg-primary/20 transition-colors"
                   )}
                 >
                   <MapIcon />
-                  Grid Mapping
+                  <span className="hidden sm:inline">Grid Mapping</span>
+                  <span className="sm:hidden">Grid</span>
                 </a>
               </div>
               <p className="text-xs text-muted-foreground">Real-time grid analysis</p>
@@ -63,7 +70,50 @@ export function DashboardHeader({ lastUpdated, activeTab, onTabChange }: Dashboa
 
           {/* Middle: Tabs */}
           {activeTab && onTabChange && (
-            <div className="flex justify-center">
+            <div className="flex justify-center sm:hidden">
+              <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+                <TabsList className="grid w-full max-w-md grid-cols-3 h-auto p-1">
+                  <TabsTrigger
+                    value="traffic"
+                    className={cn(
+                      "gap-1 flex items-center",
+                      "px-2 py-1.5",
+                      "text-xs font-medium"
+                    )}
+                  >
+                    <Activity className="w-3.5 h-3.5 flex-shrink-0" />
+                    Traffic
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="severity"
+                    className={cn(
+                      "gap-1 flex items-center",
+                      "px-2 py-1.5",
+                      "text-xs font-medium"
+                    )}
+                  >
+                    <BarChart3 className="w-3.5 h-3.5 flex-shrink-0" />
+                    Severity
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="sustained"
+                    className={cn(
+                      "gap-1 flex items-center",
+                      "px-2 py-1.5",
+                      "text-xs font-medium"
+                    )}
+                  >
+                    <Clock className="w-3.5 h-3.5 flex-shrink-0" />
+                    Sustained
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
+
+          {/* Desktop tabs (hidden on mobile) */}
+          {activeTab && onTabChange && (
+            <div className="hidden sm:flex justify-center">
               <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
                 <TabsList className="grid w-full max-w-md grid-cols-3 h-auto p-1">
                   <TabsTrigger
@@ -110,7 +160,9 @@ export function DashboardHeader({ lastUpdated, activeTab, onTabChange }: Dashboa
               <div className="text-xs text-muted-foreground font-mono">
                 Last Updated: {formatDetailedTime(lastUpdated)}
               </div>
-              <div className="text-xs text-primary font-medium">{getHoursAgo(lastUpdated)}</div>
+              <div className="text-xs text-primary font-medium">
+                {getHoursAgo(lastUpdated)}
+              </div>
             </div>
           )}
         </div>

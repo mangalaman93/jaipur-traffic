@@ -205,10 +205,10 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader 
-        lastUpdated={lastUpdated} 
-        activeTab={activeTab} 
-        onTabChange={setActiveTab} 
+      <DashboardHeader
+        lastUpdated={lastUpdated}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
 
       <main className="container py-2 space-y-3">
