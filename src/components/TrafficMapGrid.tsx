@@ -184,7 +184,8 @@ export function TrafficMapGrid({
       };
       if (
         layerWithCustomOptions.options?.className === "grid-cell" ||
-        layerWithCustomOptions.options?.className === "grid-number"
+        layerWithCustomOptions.options?.className === "grid-number" ||
+        layerWithCustomOptions.options?.className === "grid-rank"
       ) {
         mapInstance.removeLayer(layer);
       }
@@ -219,46 +220,84 @@ export function TrafficMapGrid({
           }
         });
 
-        // Add grid number for top 10 cells
+        // Add grid number for all cells
+        const gridNumber = `${x + 1},${y + 1}`;
+        const center = rect.getBounds().getCenter();
+
+        // Create a custom div icon for the grid number
+        const numberIcon = L.divIcon({
+          html: `<div style="
+            background: transparent !important;
+            color: #1f2937 !important;
+            border-radius: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font-size: 7px !important;
+            font-weight: 400 !important;
+            box-shadow: none !important;
+            pointer-events: none !important;
+            position: absolute !important;
+            left: 4px !important;
+            top: 4px !important;
+            transform: none !important;
+            z-index: 1000 !important;
+            border: none !important;
+            font-family: system-ui, -apple-system, sans-serif !important;
+            text-shadow: 1px 1px 1px rgba(255,255,255,0.8),
+                         -1px -1px 1px rgba(255,255,255,0.8),
+                         1px -1px 1px rgba(255,255,255,0.8),
+                         -1px 1px 1px rgba(255,255,255,0.8) !important;
+            line-height: 1 !important;
+          ">${gridNumber}</div>`,
+          className: "grid-number",
+          iconSize: [1, 1], // Minimal size since we're positioning absolutely
+          iconAnchor: [0, 0],
+        });
+
+        const numberMarker = L.marker([rect.getBounds().getNorth(), rect.getBounds().getWest()], { icon: numberIcon });
+        numberMarker.setZIndexOffset(1000);
+        numberMarker.addTo(mapInstance);
+
+        // Add rank number for top 10 cells if highlighting is enabled
         if (isTop10) {
           const rank = Array.from(top10Cells).indexOf(cellKey) + 1;
-          const center = rect.getBounds().getCenter();
 
-          // Create a custom div icon for the number using theme colors
-          const numberIcon = L.divIcon({
+          // Create a separate icon for the rank badge
+          const rankIcon = L.divIcon({
             html: `<div style="
-              background: transparent !important;
-              color: hsl(var(--primary)) !important;
+              background: hsl(var(--primary)) !important;
+              color: hsl(var(--primary-foreground)) !important;
               border-radius: 50% !important;
-              width: 24px !important;
-              height: 24px !important;
+              width: 16px !important;
+              height: 16px !important;
               display: flex !important;
               align-items: center !important;
               justify-content: center !important;
-              font-size: 12px !important;
+              font-size: 9px !important;
               font-weight: bold !important;
-              box-shadow: none !important;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
               pointer-events: none !important;
               position: absolute !important;
               left: 50% !important;
               top: 50% !important;
               transform: translate(-50%, -50%) !important;
-              z-index: 1000 !important;
-              border: 2px solid hsl(var(--primary)) !important;
+              z-index: 1001 !important;
+              border: 1px solid hsl(var(--primary-foreground)) !important;
               font-family: system-ui, -apple-system, sans-serif !important;
-              text-shadow: 1px 1px 2px rgba(255,255,255,0.8),
-                           -1px -1px 2px rgba(255,255,255,0.8),
-                           1px -1px 2px rgba(255,255,255,0.8),
-                           -1px 1px 2px rgba(255,255,255,0.8) !important;
+              text-shadow: none !important;
+              line-height: 1 !important;
             ">${rank}</div>`,
-            className: "grid-number",
-            iconSize: [1, 1], // Minimal size since we're positioning absolutely
+            className: "grid-rank",
+            iconSize: [1, 1],
             iconAnchor: [0.5, 0.5],
           });
 
-          const numberMarker = L.marker(center, { icon: numberIcon });
-          numberMarker.setZIndexOffset(1000);
-          numberMarker.addTo(mapInstance);
+          const rankMarker = L.marker(center, { icon: rankIcon });
+          rankMarker.setZIndexOffset(1001);
+          rankMarker.addTo(mapInstance);
         }
 
         rect.on("click", () => onCellClick(x, y));
