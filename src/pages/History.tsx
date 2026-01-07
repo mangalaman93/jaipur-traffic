@@ -1,21 +1,3 @@
-interface HourlyGroup {
-  timestamp: Date;
-  yellow: number[];
-  red: number[];
-  dark_red: number[];
-  total: number[];
-  severity: number[];
-}
-
-interface ProcessedDataPoint {
-  timestamp: Date;
-  yellow: number;
-  red: number;
-  dark_red: number;
-  total: number;
-  severity: number;
-}
-
 // 1. Constants and Interfaces
 const DAYS_OF_WEEK = [
   "sunday",
@@ -313,34 +295,39 @@ export default function History() {
     },
   });
 
-  // Data processing with hourly averaging
+  // Data processing with hourly averaging - uses timestamp as number for continuous axis
   const processedData = useMemo(() => {
-    if (!historyData) return [];
+    if (!historyData || historyData.length === 0) return [];
 
     const filteredData = historyData
-      .map((item) => ({
-        timestamp: parseISTTimestamp(item.ts),
-        yellow: item.yellow,
-        red: item.red,
-        dark_red: item.dark_red,
-        total: item.yellow + item.red + item.dark_red,
-        severity: item.yellow + item.red * 2 + item.dark_red * 3,
-      }))
+      .map((item) => {
+        const ts = parseISTTimestamp(item.ts);
+        return {
+          timestamp: ts.getTime(), // Use numeric timestamp for continuous axis
+          yellow: item.yellow,
+          red: item.red,
+          dark_red: item.dark_red,
+          total: item.yellow + item.red + item.dark_red,
+          severity: item.yellow + item.red * 2 + item.dark_red * 3,
+        };
+      })
       .filter((item) => {
-        const hour = item.timestamp.getHours();
-        const dayOfWeek = DAYS_OF_WEEK[item.timestamp.getDay()];
+        const date = new Date(item.timestamp);
+        const hour = date.getHours();
+        const dayOfWeek = DAYS_OF_WEEK[date.getDay()];
         const hourInRange = hour >= hourRange[0] && hour <= hourRange[1];
         const dayMatches = selectedDays.includes(dayOfWeek);
         return hourInRange && dayMatches;
       })
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+      .sort((a, b) => a.timestamp - b.timestamp);
 
     if (isHourlyAveraged) {
       // Group by hour-day combination and calculate averages
       const hourlyGroups = filteredData.reduce((acc, item) => {
-        const hour = item.timestamp.getHours(); // IST hour (0-23)
-        const date = item.timestamp.toDateString(); // Date string for unique day
-        const hourDayKey = `${date}-${hour}`; // Unique key for hour-day combination
+        const date = new Date(item.timestamp);
+        const hour = date.getHours();
+        const dateStr = date.toDateString();
+        const hourDayKey = `${dateStr}-${hour}`;
 
         if (!acc[hourDayKey]) {
           // Create timestamp at the start of the hour for that specific day
@@ -348,7 +335,7 @@ export default function History() {
           hourTimestamp.setMinutes(0, 0, 0);
 
           acc[hourDayKey] = {
-            timestamp: hourTimestamp,
+            timestamp: hourTimestamp.getTime(),
             yellow: [] as number[],
             red: [] as number[],
             dark_red: [] as number[],
@@ -362,44 +349,39 @@ export default function History() {
         acc[hourDayKey].total.push(item.total);
         acc[hourDayKey].severity.push(item.severity);
         return acc;
-      }, {} as Record<string, HourlyGroup>);
+      }, {} as Record<string, { timestamp: number; yellow: number[]; red: number[]; dark_red: number[]; total: number[]; severity: number[] }>);
 
-      // Debug hourly groups
-      console.log('Hourly groups created:', Object.keys(hourlyGroups).length);
-      console.log('Hourly group keys:', Object.keys(hourlyGroups).slice(0, 10));
-
-      // Sort by timestamp to maintain chronological order
       return Object.values(hourlyGroups)
-        .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
-        .map((group): ProcessedDataPoint => ({
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .map((group) => ({
           timestamp: group.timestamp,
-          yellow: group.yellow.length > 0 ? group.yellow.reduce((a: number, b: number) => a + b, 0) / group.yellow.length : 0,
-          red: group.red.length > 0 ? group.red.reduce((a: number, b: number) => a + b, 0) / group.red.length : 0,
-          dark_red: group.dark_red.length > 0 ? group.dark_red.reduce((a: number, b: number) => a + b, 0) / group.dark_red.length : 0,
-          total: group.total.length > 0 ? group.total.reduce((a: number, b: number) => a + b, 0) / group.total.length : 0,
-          severity: group.severity.length > 0 ? group.severity.reduce((a: number, b: number) => a + b, 0) / group.severity.length : 0,
+          yellow: group.yellow.reduce((a, b) => a + b, 0) / group.yellow.length,
+          red: group.red.reduce((a, b) => a + b, 0) / group.red.length,
+          dark_red: group.dark_red.reduce((a, b) => a + b, 0) / group.dark_red.length,
+          total: group.total.reduce((a, b) => a + b, 0) / group.total.length,
+          severity: group.severity.reduce((a, b) => a + b, 0) / group.severity.length,
         }));
     }
 
-    return filteredData; // Already sorted above
+    return filteredData;
   }, [historyData, hourRange, isHourlyAveraged, selectedDays]);
 
-  // Track which dates we've already shown
-  const shownDates = useMemo(() => new Set<string>(), [processedData]);
+  // Custom x-axis tick formatter - tracks shown dates per render
+  const formatXAxisTick = useMemo(() => {
+    const shownDates = new Set<string>();
+    return (tickItem: number) => {
+      const date = new Date(tickItem);
+      const hour = date.getHours();
+      const dateStr = date.toDateString();
 
-  // Custom x-axis tick formatter
-  const formatXAxisTick = (tickItem: Date | number) => {
-    const date = typeof tickItem === 'number' ? new Date(tickItem) : tickItem;
-    const hour = date.getHours();
-    const dateStr = date.toDateString();
-
-    // Show date on first hour of each day or first tick
-    if (hour === 0 || !shownDates.has(dateStr)) {
-      shownDates.add(dateStr);
-      return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-    }
-    return `${hour}:00`;
-  };
+      // Show date on first hour of each day or first tick
+      if (!shownDates.has(dateStr)) {
+        shownDates.add(dateStr);
+        return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+      }
+      return `${hour}:00`;
+    };
+  }, [processedData]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -427,79 +409,86 @@ export default function History() {
         </div>
 
         {/* Controls Section - Single Row */}
-        <div className="flex flex-wrap items-end gap-4 bg-card border border-border rounded-lg p-4">
-          <div className="flex-1 min-w-[120px]">
-            <label className="block text-xs font-medium mb-1 text-muted-foreground">Time Range</label>
-            <select
-              value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value)}
-              className="w-full p-2 border border-border rounded-md bg-background text-sm"
-            >
-              {TIME_RANGE_OPTIONS.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="bg-card border border-border rounded-lg p-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex flex-col w-[130px]">
+              <label className="text-xs font-medium text-muted-foreground h-4">Time Range</label>
+              <select
+                value={selectedTimeRange}
+                onChange={(e) => setSelectedTimeRange(e.target.value)}
+                className="mt-1 h-9 px-2 border border-border rounded-md bg-background text-sm"
+              >
+                {TIME_RANGE_OPTIONS.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex-1 min-w-[100px]">
-            <label className="block text-xs font-medium mb-1 text-muted-foreground">Metric</label>
-            <select
-              value={selectedMetrics}
-              onChange={(e) => setSelectedMetrics(e.target.value)}
-              className="w-full p-2 border border-border rounded-md bg-background text-sm"
-            >
-              {METRIC_OPTIONS.map((option) => (
-                <option key={option.key} value={option.key}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="flex flex-col w-[110px]">
+              <label className="text-xs font-medium text-muted-foreground h-4">Metric</label>
+              <select
+                value={selectedMetrics}
+                onChange={(e) => setSelectedMetrics(e.target.value)}
+                className="mt-1 h-9 px-2 border border-border rounded-md bg-background text-sm"
+              >
+                {METRIC_OPTIONS.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex-1 min-w-[100px]">
-            <label className="block text-xs font-medium mb-1 text-muted-foreground">Day Filter</label>
-            <select
-              value={selectedDays.length === 7 ? 'all' : selectedDays[0] || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSelectedDays(value === 'all' ? [...DAYS_OF_WEEK] : [value]);
-              }}
-              className="w-full p-2 border border-border rounded-md bg-background text-sm"
-            >
-              <option value="all">All Days</option>
-              {DAYS_OF_WEEK.map((day) => (
-                <option key={day} value={day}>
-                  {day.charAt(0).toUpperCase() + day.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="flex flex-col w-[110px]">
+              <label className="text-xs font-medium text-muted-foreground h-4">Day Filter</label>
+              <select
+                value={selectedDays.length === 7 ? 'all' : selectedDays[0] || ''}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedDays(value === 'all' ? [...DAYS_OF_WEEK] : [value]);
+                }}
+                className="mt-1 h-9 px-2 border border-border rounded-md bg-background text-sm"
+              >
+                <option value="all">All Days</option>
+                {DAYS_OF_WEEK.map((day) => (
+                  <option key={day} value={day}>
+                    {day.charAt(0).toUpperCase() + day.slice(1)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          <div className="flex-[2] min-w-[150px]">
-            <label className="block text-xs font-medium mb-1 text-muted-foreground">
-              Hours: {hourRange[0]}:00 - {hourRange[1]}:00
-            </label>
-            <DualHandleSlider
-              min={0}
-              max={23}
-              value={hourRange}
-              onChange={setHourRange}
-              className="w-full mt-2"
-            />
-          </div>
+            <div className="flex flex-col flex-1 min-w-[180px]">
+              <label className="text-xs font-medium text-muted-foreground h-4">
+                Hours: {hourRange[0]}:00 - {hourRange[1]}:00
+              </label>
+              <div className="mt-1 h-9 flex items-center">
+                <DualHandleSlider
+                  min={0}
+                  max={23}
+                  value={hourRange}
+                  onChange={setHourRange}
+                  className="w-full"
+                />
+              </div>
+            </div>
 
-          <div className="flex items-center">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={isHourlyAveraged}
-                onChange={(e) => setIsHourlyAveraged(e.target.checked)}
-                className="rounded border-border w-4 h-4"
-              />
-              <span className="text-sm font-medium whitespace-nowrap">Hourly Avg</span>
-            </label>
+            <div className="flex flex-col justify-end">
+              <label className="text-xs font-medium text-muted-foreground h-4">&nbsp;</label>
+              <div className="mt-1 h-9 flex items-center">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isHourlyAveraged}
+                    onChange={(e) => setIsHourlyAveraged(e.target.checked)}
+                    className="rounded border-border w-4 h-4"
+                  />
+                  <span className="text-sm font-medium whitespace-nowrap">Hourly Avg</span>
+                </label>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -513,19 +502,23 @@ export default function History() {
               </div>
             ) : processedData && processedData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={processedData}>
+                <BarChart data={processedData} barCategoryGap="1%">
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="timestamp"
+                    type="number"
+                    scale="time"
+                    domain={['dataMin', 'dataMax']}
                     tickFormatter={formatXAxisTick}
-                    interval="preserveStartEnd"
                     tick={{ fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
                     height={60}
                   />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip 
+                    labelFormatter={(value) => new Date(value).toLocaleString('en-IN')}
+                  />
                   <Legend />
                   {selectedMetrics === "yellow" && <Bar dataKey="yellow" fill="#eab308" name="Yellow Traffic" />}
                   {selectedMetrics === "red" && <Bar dataKey="red" fill="#dc2626" name="Red Traffic" />}
