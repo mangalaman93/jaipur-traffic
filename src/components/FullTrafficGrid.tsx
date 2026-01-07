@@ -39,7 +39,6 @@ export function FullTrafficGrid({
       : getTop10TrafficCells(data);
   }, [data, highlightTop10, mode]);
 
-
   return (
     <>
       <div className="space-y-4">

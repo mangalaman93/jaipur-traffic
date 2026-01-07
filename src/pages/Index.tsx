@@ -102,7 +102,6 @@ const TopAreasList = ({
   severityColors,
   severityLevelColors,
   showThresholdP95,
-  onDetailsClick,
 }: {
   areas: TrafficData[];
   title: string;
@@ -111,7 +110,6 @@ const TopAreasList = ({
   severityColors?: typeof TRAFFIC_SEVERITY_COLORS;
   severityLevelColors?: typeof SEVERITY_LEVEL_COLORS;
   showThresholdP95?: boolean;
-  onDetailsClick: (cell: TrafficData) => void;
 }) => (
   <div className="space-y-3">
     <div className="flex items-center justify-between">
@@ -130,7 +128,6 @@ const TopAreasList = ({
             severityColors={severityColors}
             severityLevelColors={severityLevelColors}
             showThresholdP95={showThresholdP95}
-            onDetailsClick={() => onDetailsClick(cell)}
           />
         ))
       ) : (
@@ -147,10 +144,7 @@ interface TabContentProps {
   mode?: "traffic" | "severity";
 }
 
-const TabContent = ({
-  data,
-  mode,
-}: TabContentProps) => (
+const TabContent = ({ data, mode }: TabContentProps) => (
   <div className="space-y-4">
     <Suspense
       fallback={<div className="h-12 bg-muted/20 animate-pulse rounded-lg" />}
@@ -162,13 +156,7 @@ const TabContent = ({
     <Suspense
       fallback={
         <div
-          className={
-            "aspect-[" +
-            GRID_DIMENSIONS.COLS +
-            "/" +
-            GRID_DIMENSIONS.ROWS +
-            "] bg-muted/20 animate-pulse rounded-lg"
-          }
+          className={`aspect-[${GRID_DIMENSIONS.COLS}/${GRID_DIMENSIONS.ROWS}] bg-muted/20 animate-pulse rounded-lg`}
         />
       }
     />
@@ -178,7 +166,11 @@ const TabContent = ({
 export default function Index() {
   const [activeTab, setActiveTab] = useState("traffic");
 
-  const { data: currentData } = useQuery({
+  const {
+    data: currentData,
+    isLoading: isLoadingCurrent,
+    error: currentError,
+  } = useQuery({
     queryKey: ["currentTraffic"],
     queryFn: async () => {
       const response = await fetch(API_ENDPOINTS.CURRENT);
@@ -190,7 +182,11 @@ export default function Index() {
     },
   });
 
-  const { data: sustainedData } = useQuery({
+  const {
+    data: sustainedData,
+    isLoading: isLoadingSustained,
+    error: sustainedError,
+  } = useQuery({
     queryKey: ["sustainedTraffic"],
     queryFn: async () => {
       const response = await fetch(API_ENDPOINTS.SUSTAINED);
@@ -213,6 +209,74 @@ export default function Index() {
 
   const lastUpdated = useMemo(() => getLastUpdated(currentData), [currentData]);
 
+  // Show loading state
+  if (isLoadingCurrent || isLoadingSustained) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader activeTab={activeTab} onTabChange={setActiveTab} />
+        <main className="container py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center space-y-4">
+              <div
+                className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"
+                role="status"
+                aria-label="Loading"
+              >
+                <span className="sr-only">Loading...</span>
+              </div>
+              <p className="text-muted-foreground">Loading traffic data...</p>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (currentError || sustainedError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <DashboardHeader activeTab={activeTab} onTabChange={setActiveTab} />
+        <main className="container py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center space-y-4 max-w-md">
+              <div className="text-red-600 mb-4">
+                <svg
+                  className="w-12 h-12 mx-auto"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-foreground">
+                Error Loading Data
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {currentError?.message ||
+                  sustainedError?.message ||
+                  "Failed to load traffic data. Please try again later."}
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+                aria-label="Retry loading traffic data"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader
@@ -225,20 +289,11 @@ export default function Index() {
         {/* Tabs moved to header */}
         <Tabs value={activeTab} className="w-full">
           <TabsContent value="traffic">
-            <TabContent
-              data={currentData || []}
-              mode="traffic"
-            />
+            <TabContent data={currentData || []} mode="traffic" />
             <Suspense
               fallback={
                 <div
-                  className={
-                    "aspect-[" +
-                    GRID_DIMENSIONS.COLS +
-                    "/" +
-                    GRID_DIMENSIONS.ROWS +
-                    "] bg-muted/20 animate-pulse rounded-lg"
-                  }
+                  className={`aspect-[${GRID_DIMENSIONS.COLS}/${GRID_DIMENSIONS.ROWS}] bg-muted/20 animate-pulse rounded-lg`}
                 />
               }
             >
@@ -253,7 +308,6 @@ export default function Index() {
                     description="Most congested traffic areas right now"
                     emptyMessage="No congested areas data available"
                     severityColors={TRAFFIC_SEVERITY_COLORS}
-                    onDetailsClick={() => {}}
                   />
                 }
               />
@@ -261,20 +315,11 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="severity">
-            <TabContent
-              data={currentData || []}
-              mode="severity"
-            />
+            <TabContent data={currentData || []} mode="severity" />
             <Suspense
               fallback={
                 <div
-                  className={
-                    "aspect-[" +
-                    GRID_DIMENSIONS.COLS +
-                    "/" +
-                    GRID_DIMENSIONS.ROWS +
-                    "] bg-muted/20 animate-pulse rounded-lg"
-                  }
+                  className={`aspect-[${GRID_DIMENSIONS.COLS}/${GRID_DIMENSIONS.ROWS}] bg-muted/20 animate-pulse rounded-lg`}
                 />
               }
             >
@@ -289,7 +334,6 @@ export default function Index() {
                     description="Areas with highest severity above historical thresholds"
                     emptyMessage="No severity anomalies data available"
                     severityLevelColors={SEVERITY_LEVEL_COLORS}
-                    onDetailsClick={() => {}}
                   />
                 }
               />
@@ -297,19 +341,11 @@ export default function Index() {
           </TabsContent>
 
           <TabsContent value="sustained">
-            <TabContent
-              data={sustainedData || []}
-            />
+            <TabContent data={sustainedData || []} />
             <Suspense
               fallback={
                 <div
-                  className={
-                    "aspect-[" +
-                    GRID_DIMENSIONS.COLS +
-                    "/" +
-                    GRID_DIMENSIONS.ROWS +
-                    "] bg-muted/20 animate-pulse rounded-lg"
-                  }
+                  className={`aspect-[${GRID_DIMENSIONS.COLS}/${GRID_DIMENSIONS.ROWS}] bg-muted/20 animate-pulse rounded-lg`}
                 />
               }
             >
@@ -324,7 +360,6 @@ export default function Index() {
                     emptyMessage="No sustained traffic data available"
                     showThresholdP95={true}
                     severityColors={TRAFFIC_SEVERITY_COLORS}
-                    onDetailsClick={() => {}}
                   />
                 }
               />

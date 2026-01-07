@@ -10,7 +10,6 @@ interface TrafficAreaCardProps {
   showThresholdP95?: boolean;
   severityColors?: Record<string, string>;
   severityLevelColors?: Record<string, string>;
-  onDetailsClick?: () => void;
 }
 
 export function TrafficAreaCard({
@@ -19,7 +18,6 @@ export function TrafficAreaCard({
   showThresholdP95 = false,
   severityColors,
   severityLevelColors,
-  onDetailsClick,
 }: TrafficAreaCardProps) {
   const severity = getTrafficSeverityLevel(cell);
 
@@ -43,7 +41,10 @@ export function TrafficAreaCard({
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-2">
+    <article
+      className="bg-card border border-border rounded-lg p-2"
+      aria-label={`Traffic area at grid position ${cell.x}, ${cell.y}`}
+    >
       <div className="flex gap-2">
         {/* Rank - Left side, vertically centered */}
         <div
@@ -93,6 +94,7 @@ export function TrafficAreaCard({
                   "bg-primary text-primary-foreground rounded-full",
                   "hover:bg-primary/90 transition-colors",
                 )}
+                aria-label={`View grid ${cell.x}, ${cell.y} on Google Maps`}
                 title="View on Google Maps"
               >
                 <svg
@@ -115,32 +117,6 @@ export function TrafficAreaCard({
                   />
                 </svg>
               </a>
-
-              {/* Details Button */}
-              <button
-                className={cn(
-                  "flex-shrink-0 inline-flex items-center justify-center",
-                  "w-6 h-6",
-                  "bg-secondary text-secondary-foreground rounded-full",
-                  "hover:bg-secondary/80 transition-colors",
-                )}
-                title="View Details"
-                onClick={() => onDetailsClick?.()}
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              </button>
             </div>
           </div>
 
@@ -201,6 +177,6 @@ export function TrafficAreaCard({
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 }

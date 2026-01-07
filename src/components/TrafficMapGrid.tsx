@@ -257,7 +257,10 @@ export function TrafficMapGrid({
           iconAnchor: [0, 0],
         });
 
-        const numberMarker = L.marker([rect.getBounds().getNorth(), rect.getBounds().getWest()], { icon: numberIcon });
+        const numberMarker = L.marker(
+          [rect.getBounds().getNorth(), rect.getBounds().getWest()],
+          { icon: numberIcon },
+        );
         numberMarker.setZIndexOffset(1000);
         numberMarker.addTo(mapInstance);
 
