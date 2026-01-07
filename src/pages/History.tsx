@@ -299,7 +299,7 @@ export default function History() {
   const [selectedTimeRange, setSelectedTimeRange] = useState<string>("3d");
 
   // Data fetching
-  const { data: historyData, isLoading } = useQuery({
+  const { data: historyData, isLoading } = useQuery<HistoryData[]>({
     queryKey: ["history", gridX, gridY, selectedTimeRange],
     queryFn: async () => {
       const response = await fetch(
@@ -328,9 +328,12 @@ export default function History() {
       }))
       .filter((item) => {
         const hour = item.timestamp.getHours();
-        return hour >= hourRange[0] && hour <= hourRange[1];
+        const dayOfWeek = DAYS_OF_WEEK[item.timestamp.getDay()];
+        const hourInRange = hour >= hourRange[0] && hour <= hourRange[1];
+        const dayMatches = selectedDays.includes(dayOfWeek);
+        return hourInRange && dayMatches;
       })
-      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime()); // Sort immediately after filtering
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
     if (isHourlyAveraged) {
       // Group by hour-day combination and calculate averages
@@ -379,48 +382,23 @@ export default function History() {
     }
 
     return filteredData; // Already sorted above
-  }, [historyData, hourRange, isHourlyAveraged]);
+  }, [historyData, hourRange, isHourlyAveraged, selectedDays]);
+
+  // Track which dates we've already shown
+  const shownDates = useMemo(() => new Set<string>(), [processedData]);
 
   // Custom x-axis tick formatter
   const formatXAxisTick = (tickItem: Date | number) => {
     const date = typeof tickItem === 'number' ? new Date(tickItem) : tickItem;
     const hour = date.getHours();
+    const dateStr = date.toDateString();
 
-    // Find the index of this tick in the processed data using approximate matching
-    const currentTime = date.getTime();
-    const currentIndex = processedData?.findIndex(item => {
-      const itemTime = new Date(item.timestamp).getTime();
-      // Allow for small time differences (within 1 minute)
-      return Math.abs(itemTime - currentTime) < 60000;
-    });
-
-    // For ticks that don't match data points, find the nearest data point
-    let actualIndex = currentIndex;
-    if (currentIndex === -1 && processedData) {
-      // Find the closest data point to this tick
-      actualIndex = processedData.reduce((closestIndex, item, index) => {
-        const itemTime = new Date(item.timestamp).getTime();
-        const closestTime = new Date(processedData[closestIndex].timestamp).getTime();
-        return Math.abs(itemTime - currentTime) < Math.abs(closestTime - currentTime) ? index : closestIndex;
-      }, 0);
+    // Show date on first hour of each day or first tick
+    if (hour === 0 || !shownDates.has(dateStr)) {
+      shownDates.add(dateStr);
+      return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
     }
-
-    // Check if this is the first data point or if the previous data point is from a different day
-    const isFirstDataPoint = actualIndex === 0;
-    const currentDataPoint = processedData[actualIndex];
-    const currentDataDate = currentDataPoint ? new Date(currentDataPoint.timestamp).toDateString() : date.toDateString();
-    const isDayChange = actualIndex > 0 && 
-      new Date(processedData[actualIndex - 1].timestamp).toDateString() !== currentDataDate;
-
-    // Show date for first data point or when day changes
-    if (isFirstDataPoint || isDayChange) {
-      return `${date.toLocaleDateString('en-IN', {
-        month: 'short',
-        day: 'numeric'
-      })}`;
-    } else {
-      return `${hour}:00`;
-    }
+    return `${hour}:00`;
   };
 
   return (
@@ -448,10 +426,10 @@ export default function History() {
           </div>
         </div>
 
-        {/* Controls Section */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          <div className="lg:col-span-1">
-            <label className="block text-sm font-medium mb-2">Time Range</label>
+        {/* Controls Section - Single Row */}
+        <div className="flex flex-wrap items-end gap-4 bg-card border border-border rounded-lg p-4">
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-xs font-medium mb-1 text-muted-foreground">Time Range</label>
             <select
               value={selectedTimeRange}
               onChange={(e) => setSelectedTimeRange(e.target.value)}
@@ -465,8 +443,8 @@ export default function History() {
             </select>
           </div>
 
-          <div className="lg:col-span-1">
-            <label className="block text-sm font-medium mb-2">Metric</label>
+          <div className="flex-1 min-w-[100px]">
+            <label className="block text-xs font-medium mb-1 text-muted-foreground">Metric</label>
             <select
               value={selectedMetrics}
               onChange={(e) => setSelectedMetrics(e.target.value)}
@@ -480,8 +458,8 @@ export default function History() {
             </select>
           </div>
 
-          <div className="lg:col-span-1">
-            <label className="block text-sm font-medium mb-2">Day</label>
+          <div className="flex-1 min-w-[100px]">
+            <label className="block text-xs font-medium mb-1 text-muted-foreground">Day Filter</label>
             <select
               value={selectedDays.length === 7 ? 'all' : selectedDays[0] || ''}
               onChange={(e) => {
@@ -499,30 +477,28 @@ export default function History() {
             </select>
           </div>
 
-          <div className="lg:col-span-1 lg:pl-4">
-            <label className="block text-sm font-medium mb-2">Hour Range</label>
+          <div className="flex-[2] min-w-[150px]">
+            <label className="block text-xs font-medium mb-1 text-muted-foreground">
+              Hours: {hourRange[0]}:00 - {hourRange[1]}:00
+            </label>
             <DualHandleSlider
               min={0}
               max={23}
               value={hourRange}
               onChange={setHourRange}
-              className="w-full"
+              className="w-full mt-2"
             />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>{hourRange[0]}:00</span>
-              <span>{hourRange[1]}:00</span>
-            </div>
           </div>
 
-          <div className="lg:col-span-1">
-            <label className="flex items-center gap-2 mt-6">
+          <div className="flex items-center">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={isHourlyAveraged}
                 onChange={(e) => setIsHourlyAveraged(e.target.checked)}
-                className="rounded border-border"
+                className="rounded border-border w-4 h-4"
               />
-              <span className="text-sm font-medium">Avg Hourly</span>
+              <span className="text-sm font-medium whitespace-nowrap">Hourly Avg</span>
             </label>
           </div>
         </div>
@@ -541,11 +517,12 @@ export default function History() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="timestamp"
-                    type="number"
-                    domain={["dataMin", "dataMax"]}
                     tickFormatter={formatXAxisTick}
-                    interval={isHourlyAveraged ? 2 : 0}
-                    tickCount={25}
+                    interval="preserveStartEnd"
+                    tick={{ fontSize: 11 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
                   />
                   <YAxis />
                   <Tooltip />
