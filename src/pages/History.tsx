@@ -366,28 +366,38 @@ export default function History() {
     return filteredData;
   }, [historyData, hourRange, isHourlyAveraged, selectedDays]);
 
-  // Custom x-axis tick formatter - tracks shown dates per render
-  const formatXAxisTick = useMemo(() => {
-    const shownDates = new Set<string>();
-    return (tickItem: number) => {
-      const date = new Date(tickItem);
-      const hour = date.getHours();
-      const minutes = date.getMinutes();
-      const dateStr = date.toDateString();
+  // Custom x-axis tick formatter - show date/day at day boundaries, time otherwise
+  const formatXAxisTick = (tickItem: number) => {
+    const date = new Date(tickItem);
+    const hour = date.getHours();
+    const minutes = date.getMinutes();
+    const dayName = date.toLocaleDateString('en-IN', { weekday: 'short' });
+    const dateLabel = date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
 
-      // Show date on first tick or when day changes
-      if (!shownDates.has(dateStr)) {
-        shownDates.add(dateStr);
-        return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+    // Find if this is the first data point of a new day
+    if (processedData && processedData.length > 0) {
+      const currentDateStr = date.toDateString();
+      const dataIndex = processedData.findIndex(d => {
+        const dDate = new Date(d.timestamp);
+        return dDate.toDateString() === currentDateStr;
+      });
+
+      // If this is the first occurrence of this date in data, show date + day
+      if (dataIndex >= 0) {
+        const firstOfDay = new Date(processedData[dataIndex].timestamp);
+        // Check if this tick is close to the first data point of this day (within 1 hour)
+        if (Math.abs(tickItem - firstOfDay.getTime()) < 3600000) {
+          return `${dateLabel} (${dayName})`;
+        }
       }
-      
-      // Show minutes when not hourly averaged
-      if (!isHourlyAveraged) {
-        return `${hour}:${minutes.toString().padStart(2, '0')}`;
-      }
-      return `${hour}:00`;
-    };
-  }, [processedData, isHourlyAveraged]);
+    }
+
+    // Show time for other ticks
+    if (!isHourlyAveraged) {
+      return `${hour}:${minutes.toString().padStart(2, '0')}`;
+    }
+    return `${hour}:00`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -466,7 +476,7 @@ export default function History() {
               </select>
             </div>
 
-            <div className="flex flex-col flex-1 min-w-[180px]">
+            <div className="flex flex-col flex-1 min-w-[150px] max-w-[600px]">
               <label className="text-xs font-medium text-muted-foreground h-4">
                 Hours: {hourRange[0]}:00 - {hourRange[1]}:00
               </label>
@@ -508,8 +518,8 @@ export default function History() {
               </div>
             ) : processedData && processedData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart 
-                  data={processedData} 
+                <BarChart
+                  data={processedData}
                   barCategoryGap="1%"
                   margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
                 >
@@ -526,7 +536,7 @@ export default function History() {
                     height={60}
                   />
                   <YAxis width={50} />
-                  <Tooltip 
+                  <Tooltip
                     labelFormatter={(value) => new Date(value).toLocaleString('en-IN')}
                   />
                   <Legend />
