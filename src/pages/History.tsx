@@ -372,16 +372,22 @@ export default function History() {
     return (tickItem: number) => {
       const date = new Date(tickItem);
       const hour = date.getHours();
+      const minutes = date.getMinutes();
       const dateStr = date.toDateString();
 
-      // Show date on first hour of each day or first tick
+      // Show date on first tick or when day changes
       if (!shownDates.has(dateStr)) {
         shownDates.add(dateStr);
         return date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
       }
+      
+      // Show minutes when not hourly averaged
+      if (!isHourlyAveraged) {
+        return `${hour}:${minutes.toString().padStart(2, '0')}`;
+      }
       return `${hour}:00`;
     };
-  }, [processedData]);
+  }, [processedData, isHourlyAveraged]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -502,20 +508,24 @@ export default function History() {
               </div>
             ) : processedData && processedData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={processedData} barCategoryGap="1%">
+                <BarChart 
+                  data={processedData} 
+                  barCategoryGap="1%"
+                  margin={{ top: 10, right: 30, left: 10, bottom: 10 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="timestamp"
                     type="number"
                     scale="time"
-                    domain={['dataMin', 'dataMax']}
+                    domain={[(dataMin: number) => dataMin - 1800000, (dataMax: number) => dataMax + 1800000]}
                     tickFormatter={formatXAxisTick}
                     tick={{ fontSize: 11 }}
                     angle={-45}
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis />
+                  <YAxis width={50} />
                   <Tooltip 
                     labelFormatter={(value) => new Date(value).toLocaleString('en-IN')}
                   />
